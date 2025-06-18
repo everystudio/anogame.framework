@@ -32,9 +32,6 @@ Thumbs.db
 # Unity Asset Store
 *.unitypackage
 
-# Ignore meta files
-*.meta
-
 # Ignore crash logs
 CrashLogs/
 
