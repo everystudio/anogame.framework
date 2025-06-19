@@ -4,11 +4,11 @@ using UnityEngine;
 namespace anogame.framework
 {
     [CreateAssetMenu(menuName = "ano/character/Skill Definition")]
-    public class SkillDefinition : ScriptableObject, ISkillEffectSource
+    public class SkillDefinition : ScriptableObject, IEffectSource
     {
         public string SkillName;
-        public ISkillEffect[] Effects;
+        public IEffect[] Effects;
 
-        public ISkillEffect[] GetEffects() => Effects;
+        public IEffect[] GetEffects() => Effects;
     }
 }

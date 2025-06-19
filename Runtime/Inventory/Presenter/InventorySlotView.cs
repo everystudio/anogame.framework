@@ -50,10 +50,31 @@ namespace anogame.framework
             switch (type)
             {
                 case ItemType.Consumable:
-                    // 消費 → 削除してUI更新
-                    model.Remove(currentItem.Item, 1);
-                    presenter.Refresh();
-                    Debug.Log($"消費アイテム '{currentItem.Item.DisplayName}' を使用しました");
+                    // ConsumableItemとして使用
+                    if (currentItem.Item is ConsumableItem consumableItem)
+                    {
+                        // TODO: 実際のプレイヤーキャラクターを取得する仕組みが必要
+                        // 現在はダミーのCharacterStatusを作成
+                        var dummyTarget = new CharacterStatus();
+                        
+                        if (consumableItem.Use(dummyTarget))
+                        {
+                            model.Remove(currentItem.Item, 1);
+                            presenter.Refresh();
+                            Debug.Log($"消費アイテム '{currentItem.Item.DisplayName}' を使用しました");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"アイテム '{currentItem.Item.DisplayName}' の使用に失敗しました");
+                        }
+                    }
+                    else
+                    {
+                        // 従来の消費アイテム処理
+                        model.Remove(currentItem.Item, 1);
+                        presenter.Refresh();
+                        Debug.Log($"消費アイテム '{currentItem.Item.DisplayName}' を使用しました");
+                    }
                     break;
 
                 case ItemType.Equipment:
