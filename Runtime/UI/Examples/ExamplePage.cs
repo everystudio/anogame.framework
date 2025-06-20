@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace anogame.framework.UI
 {
@@ -12,7 +13,7 @@ namespace anogame.framework.UI
         [SerializeField] private Button nextPageButton;
         [SerializeField] private Button openModalButton;
         [SerializeField] private Button backButton;
-        [SerializeField] private Text pageTitle;
+        [SerializeField] private TextMeshProUGUI pageTitle;
         
         [Header("設定")]
         [SerializeField] private string nextPageId;
@@ -87,6 +88,21 @@ namespace anogame.framework.UI
         private void GoBack()
         {
             PageManager.Instance.PopPage();
+        }
+        
+        /// <summary>
+        /// PageIDを動的に設定する（テスト用）
+        /// </summary>
+        /// <param name="pageId">設定するページID</param>
+        public new void SetPageId(string pageId)
+        {
+            base.SetPageId(pageId);
+            
+            // タイトルも更新
+            if (pageTitle != null)
+            {
+                pageTitle.text = $"Page: {PageId}";
+            }
         }
         
         protected override void OnCleanup()

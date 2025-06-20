@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace anogame.framework.UI
 {
@@ -9,8 +10,8 @@ namespace anogame.framework.UI
     public class ExampleSheet : SheetBase
     {
         [Header("UI要素")]
-        [SerializeField] private Text sheetTitle;
-        [SerializeField] private Text sheetContent;
+        [SerializeField] private TextMeshProUGUI sheetTitle;
+        [SerializeField] private TextMeshProUGUI sheetContent;
         [SerializeField] private Button actionButton;
         [SerializeField] private Image tabIcon;
         

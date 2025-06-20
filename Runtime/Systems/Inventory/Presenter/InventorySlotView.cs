@@ -1,18 +1,14 @@
 // Packages/anogame.framework/Runtime/Presenter/InventorySlotView.cs
 using UnityEngine;
 using UnityEngine.UI;
-#if TMP_PRESENT
 using TMPro;
-#endif
 
 namespace anogame.framework
 {
     public class InventorySlotView : MonoBehaviour
     {
         [SerializeField] private Image icon;
-#if TMP_PRESENT
-        [SerializeField] private TMP_Text amountText;
-#endif
+        [SerializeField] private TextMeshProUGUI amountText;
         [SerializeField] private Button useButton;
 
         private InventoryItem currentItem;
@@ -27,9 +23,11 @@ namespace anogame.framework
 
             icon.sprite = item.Item.Icon;
             icon.enabled = item.Item.Icon != null;
-#if TMP_PRESENT
-            amountText.text = item.Item.IsStackable ? item.Amount.ToString() : "";
-#endif
+            
+            if (amountText != null)
+            {
+                amountText.text = item.Item.IsStackable ? item.Amount.ToString() : "";
+            }
 
             if (useButton != null)
             {

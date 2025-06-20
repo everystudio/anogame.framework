@@ -13,6 +13,10 @@ namespace anogame.framework.UI
         private readonly Stack<IPage> pageStack = new Stack<IPage>();
         private readonly Dictionary<string, IPage> registeredPages = new Dictionary<string, IPage>();
         
+        [Header("ページ管理設定")]
+        [SerializeField] private Transform pageContainer; // オプション：ページの親コンテナ
+        [SerializeField] private bool moveToContainer = false; // 親を移動するかどうか
+        
         /// <summary>
         /// 現在のアクティブページ
         /// </summary>
@@ -45,6 +49,13 @@ namespace anogame.framework.UI
             
             // ページ遷移要求イベントを購読
             page.OnPageTransition += OnPageTransitionRequested;
+            
+            // オプション：ページを統一コンテナに移動
+            if (moveToContainer && pageContainer != null && page.GameObject != null)
+            {
+                page.GameObject.transform.SetParent(pageContainer, false);
+                Debug.Log($"[PageManager] Page '{page.PageId}' を統一コンテナに移動しました");
+            }
             
             Debug.Log($"[PageManager] Page '{page.PageId}' を登録しました");
         }

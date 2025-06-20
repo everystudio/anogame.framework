@@ -9,9 +9,14 @@ namespace anogame.framework.UI
     public interface IModal : IUIView
     {
         /// <summary>
-        /// モーダルID
+        /// モーダルのID（種類を表す）
         /// </summary>
         string ModalId { get; }
+        
+        /// <summary>
+        /// モーダルのインスタンスID（個別のインスタンスを識別）
+        /// </summary>
+        string InstanceId { get; }
         
         /// <summary>
         /// 表示順序（高いほど前面）
@@ -53,6 +58,11 @@ namespace anogame.framework.UI
         /// モーダルが閉じられた時に呼ばれる
         /// </summary>
         void OnClose();
+        
+        /// <summary>
+        /// 背景がクリックされた時に呼ばれる
+        /// </summary>
+        void OnBackgroundClick();
         
         /// <summary>
         /// モーダル閉じる要求イベント

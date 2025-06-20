@@ -13,10 +13,39 @@ namespace anogame.framework.UI
         [SerializeField] private bool canCloseByBackgroundClick = true;
         [SerializeField] private bool canCloseByEscapeKey = true;
         
+        private string instanceId;
+        
         public string ModalId => modalId;
+        public string InstanceId => instanceId;
         public int SortOrder { get => sortOrder; set => sortOrder = value; }
         public bool CanCloseByBackgroundClick => canCloseByBackgroundClick;
         public bool CanCloseByEscapeKey => canCloseByEscapeKey;
+        
+        /// <summary>
+        /// ModalIDを設定する（主にテスト用）
+        /// </summary>
+        /// <param name="id">設定するモーダルID</param>
+        protected void SetModalId(string id)
+        {
+            modalId = id;
+        }
+        
+        /// <summary>
+        /// 新しいインスタンスIDを生成する
+        /// </summary>
+        public void GenerateNewInstanceId()
+        {
+            instanceId = System.Guid.NewGuid().ToString();
+        }
+        
+        /// <summary>
+        /// インスタンスIDを手動設定する
+        /// </summary>
+        /// <param name="id">設定するインスタンスID</param>
+        public void SetInstanceId(string id)
+        {
+            instanceId = id;
+        }
         
         public event Action<IModal> OnCloseRequested;
         
@@ -76,6 +105,12 @@ namespace anogame.framework.UI
             if (string.IsNullOrEmpty(modalId))
             {
                 modalId = gameObject.name;
+            }
+            
+            // InstanceIdを自動生成
+            if (string.IsNullOrEmpty(instanceId))
+            {
+                GenerateNewInstanceId();
             }
         }
         

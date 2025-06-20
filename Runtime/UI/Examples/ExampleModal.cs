@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using TMPro;
 
 namespace anogame.framework.UI
 {
@@ -12,8 +13,8 @@ namespace anogame.framework.UI
         [SerializeField] private Button closeButton;
         [SerializeField] private Button openSubModalButton;
         [SerializeField] private Button backgroundButton;
-        [SerializeField] private Text modalTitle;
-        [SerializeField] private Text modalContent;
+        [SerializeField] private TextMeshProUGUI modalTitle;
+        [SerializeField] private TextMeshProUGUI modalContent;
         
         [Header("設定")]
         [SerializeField] private string subModalId;
@@ -105,6 +106,36 @@ namespace anogame.framework.UI
             if (!string.IsNullOrEmpty(subModalId))
             {
                 ModalManager.Instance.OpenModal(subModalId);
+            }
+        }
+        
+        /// <summary>
+        /// ModalIDを動的に設定する（テスト用）
+        /// </summary>
+        /// <param name="modalId">設定するモーダルID</param>
+        public new void SetModalId(string modalId)
+        {
+            base.SetModalId(modalId);
+            
+            // タイトルも更新
+            if (modalTitle != null)
+            {
+                modalTitle.text = $"Modal: {ModalId}";
+            }
+        }
+        
+        /// <summary>
+        /// モーダルメッセージを動的に設定する
+        /// </summary>
+        /// <param name="message">設定するメッセージ</param>
+        public void SetModalMessage(string message)
+        {
+            modalMessage = message;
+            
+            // コンテンツも更新
+            if (modalContent != null)
+            {
+                modalContent.text = message;
             }
         }
         

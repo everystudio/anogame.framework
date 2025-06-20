@@ -12,6 +12,15 @@ namespace anogame.framework.UI
         
         public string PageId => pageId;
         
+        /// <summary>
+        /// PageIDを設定する（主にテスト用）
+        /// </summary>
+        /// <param name="id">設定するページID</param>
+        protected void SetPageId(string id)
+        {
+            pageId = id;
+        }
+        
         public event Action<IPage> OnPageTransition;
         
         /// <summary>
