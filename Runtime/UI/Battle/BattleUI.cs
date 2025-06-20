@@ -39,13 +39,13 @@ namespace anogame.framework
         [SerializeField] private TextMeshProUGUI logText;
 
         // 現在の選択状態
-        private BattleParticipant _currentActor;
-        private List<BattleParticipant> _validTargets;
-        private BattleAction _selectedAction;
-        private bool _hasSelectedAction;
+        private BattleParticipant currentActor;
+        private List<BattleParticipant> validTargets;
+        private BattleAction selectedAction;
+        private bool hasSelectedAction;
 
         // UI要素の管理
-        private Dictionary<BattleParticipant, HPMPBar> _statusBars = new();
+        private Dictionary<BattleParticipant, HPMPBar> statusBars = new();
 
         private void Start()
         {
@@ -102,7 +102,7 @@ namespace anogame.framework
             if (statusBar != null)
             {
                 statusBar.SetTarget(participant.CharacterStatus);
-                _statusBars[participant] = statusBar;
+                statusBars[participant] = statusBar;
                 
                 // 名前表示
                 var nameText = barObject.GetComponentInChildren<TextMeshProUGUI>();
@@ -118,10 +118,10 @@ namespace anogame.framework
         /// </summary>
         public void ShowActionSelection(BattleParticipant participant, List<BattleParticipant> validTargets)
         {
-            _currentActor = participant;
-            _validTargets = validTargets;
-            _selectedAction = null;
-            _hasSelectedAction = false;
+            currentActor = participant;
+            this.validTargets = validTargets;
+            selectedAction = null;
+            hasSelectedAction = false;
 
             // 使用可能な行動を確認してボタンを有効/無効化
             UpdateActionButtons();
@@ -139,15 +139,15 @@ namespace anogame.framework
         /// </summary>
         private void UpdateActionButtons()
         {
-            if (_currentActor == null) return;
+            if (currentActor == null) return;
 
             // 攻撃は常に可能
             if (attackButton != null)
-                attackButton.interactable = _validTargets.Count > 0;
+                attackButton.interactable = validTargets.Count > 0;
 
             // スキルは利用可能なスキルがある場合のみ
             if (skillButton != null)
-                skillButton.interactable = _currentActor.AvailableSkills.Count > 0;
+                skillButton.interactable = currentActor.AvailableSkills.Count > 0;
 
             // アイテムは所持アイテムがある場合のみ（今後実装）
             if (itemButton != null)
@@ -166,10 +166,10 @@ namespace anogame.framework
             switch (actionType)
             {
                 case BattleActionType.Attack:
-                    if (_validTargets.Count == 1)
+                    if (validTargets.Count == 1)
                     {
                         // 対象が1体の場合は即座に決定
-                        CompleteAction(new BattleAction(actionType, _currentActor, _validTargets[0]));
+                        CompleteAction(new BattleAction(actionType, currentActor, validTargets[0]));
                     }
                     else
                     {
@@ -186,7 +186,7 @@ namespace anogame.framework
                     break;
                     
                 case BattleActionType.Guard:
-                    CompleteAction(new BattleAction(actionType, _currentActor));
+                    CompleteAction(new BattleAction(actionType, currentActor));
                     break;
             }
         }
@@ -207,7 +207,7 @@ namespace anogame.framework
             }
 
             // 対象ボタンを作成
-            foreach (var target in _validTargets)
+            foreach (var target in validTargets)
             {
                 if (targetButtonPrefab != null)
                 {
@@ -224,7 +224,7 @@ namespace anogame.framework
                     {
                         button.onClick.AddListener(() => 
                         {
-                            CompleteAction(new BattleAction(actionType, _currentActor, target));
+                            CompleteAction(new BattleAction(actionType, currentActor, target));
                         });
                     }
                 }
@@ -249,7 +249,7 @@ namespace anogame.framework
             }
 
             // スキルボタンを作成
-            foreach (var skill in _currentActor.AvailableSkills)
+            foreach (var skill in currentActor.AvailableSkills)
             {
                 if (skillButtonPrefab != null)
                 {
@@ -280,15 +280,15 @@ namespace anogame.framework
         /// </summary>
         private void SelectSkill(SkillDefinition skill)
         {
-            var action = new BattleAction(BattleActionType.Skill, _currentActor)
+            var action = new BattleAction(BattleActionType.Skill, currentActor)
             {
                 Skill = skill
             };
 
             // 対象選択が必要かチェック
-            if (_validTargets.Count == 1)
+            if (validTargets.Count == 1)
             {
-                action.Target = _validTargets[0];
+                action.Target = validTargets[0];
                 CompleteAction(action);
             }
             else
@@ -314,7 +314,7 @@ namespace anogame.framework
             }
 
             // 対象ボタンを作成
-            foreach (var target in _validTargets)
+            foreach (var target in validTargets)
             {
                 if (targetButtonPrefab != null)
                 {
@@ -346,11 +346,11 @@ namespace anogame.framework
         /// </summary>
         private void CompleteAction(BattleAction action)
         {
-            _selectedAction = action;
-            _hasSelectedAction = true;
+            selectedAction = action;
+            hasSelectedAction = true;
             
             HideAllPanels();
-            UpdateStateText($"{_currentActor.Name} の行動が決定しました");
+            UpdateStateText($"{currentActor.Name} の行動が決定しました");
         }
 
         /// <summary>
@@ -407,7 +407,7 @@ namespace anogame.framework
         }
 
         // IBattleUI インターフェースの実装
-        public bool HasSelectedAction() => _hasSelectedAction;
-        public BattleAction GetSelectedAction() => _selectedAction;
+        public bool HasSelectedAction() => hasSelectedAction;
+        public BattleAction GetSelectedAction() => selectedAction;
     }
 } 

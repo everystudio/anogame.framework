@@ -9,8 +9,8 @@ namespace anogame.framework.UI
     public class UIManager : MonoSingleton<UIManager>
     {
         [Header("設定")]
-        [SerializeField] private bool _enableBackButton = true;
-        [SerializeField] private bool _enableEscapeKey = true;
+        [SerializeField] private bool enableBackButton = true;
+        [SerializeField] private bool enableEscapeKey = true;
         
         /// <summary>
         /// PageManagerの参照
@@ -154,7 +154,7 @@ namespace anogame.framework.UI
         /// </summary>
         private void HandleInput()
         {
-            if (!_enableEscapeKey) return;
+            if (!enableEscapeKey) return;
             
             if (Input.GetKeyDown(KeyCode.Escape))
             {
@@ -162,7 +162,7 @@ namespace anogame.framework.UI
             }
             
             // Android向けの戻るボタン処理
-            if (_enableBackButton && Input.GetKeyDown(KeyCode.Escape))
+            if (enableBackButton && Input.GetKeyDown(KeyCode.Escape))
             {
                 HandleBackButton();
             }

@@ -8,9 +8,9 @@ namespace anogame.framework.UI
     /// </summary>
     public abstract class UIViewBase : MonoBehaviour, IUIView
     {
-        [SerializeField] private bool _isVisible = false;
+        [SerializeField] private bool isVisible = false;
         
-        public bool IsVisible => _isVisible;
+        public bool IsVisible => isVisible;
         public GameObject GameObject => gameObject;
         
         public event Action<bool> OnVisibilityChanged;
@@ -20,9 +20,9 @@ namespace anogame.framework.UI
         /// </summary>
         public virtual void Show()
         {
-            if (_isVisible) return;
+            if (isVisible) return;
             
-            _isVisible = true;
+            isVisible = true;
             gameObject.SetActive(true);
             OnShow();
             OnVisibilityChanged?.Invoke(true);
@@ -33,9 +33,9 @@ namespace anogame.framework.UI
         /// </summary>
         public virtual void Hide()
         {
-            if (!_isVisible) return;
+            if (!isVisible) return;
             
-            _isVisible = false;
+            isVisible = false;
             OnHide();
             gameObject.SetActive(false);
             OnVisibilityChanged?.Invoke(false);
@@ -57,7 +57,7 @@ namespace anogame.framework.UI
         protected virtual void OnInitialize()
         {
             // 初期状態を設定
-            gameObject.SetActive(_isVisible);
+            gameObject.SetActive(isVisible);
         }
         
         /// <summary>

@@ -10,16 +10,16 @@ namespace anogame.framework.UI
     /// </summary>
     public class PageManager : MonoSingleton<PageManager>
     {
-        private readonly Stack<IPage> _pageStack = new Stack<IPage>();
-        private readonly Dictionary<string, IPage> _registeredPages = new Dictionary<string, IPage>();
+        private readonly Stack<IPage> pageStack = new Stack<IPage>();
+        private readonly Dictionary<string, IPage> registeredPages = new Dictionary<string, IPage>();
         
         /// <summary>
-        /// 現在のページ
+        /// 現在のアクティブページ
         /// </summary>
-        public IPage CurrentPage => _pageStack.Count > 0 ? _pageStack.Peek() : null;
+        public IPage CurrentPage => pageStack.Count > 0 ? pageStack.Peek() : null;
         
         /// <summary>
-        /// ページ変更イベント
+        /// ページ遷移イベント（遷移先ページ, 遷移元ページ）
         /// </summary>
         public event Action<IPage, IPage> OnPageChanged;
         
@@ -35,15 +35,15 @@ namespace anogame.framework.UI
                 return;
             }
             
-            if (_registeredPages.ContainsKey(page.PageId))
+            if (registeredPages.ContainsKey(page.PageId))
             {
                 Debug.LogWarning($"[PageManager] Page '{page.PageId}' は既に登録されています");
                 return;
             }
             
-            _registeredPages[page.PageId] = page;
+            registeredPages[page.PageId] = page;
             
-            // ページ遷移イベントを購読
+            // ページ遷移要求イベントを購読
             page.OnPageTransition += OnPageTransitionRequested;
             
             Debug.Log($"[PageManager] Page '{page.PageId}' を登録しました");
@@ -55,92 +55,114 @@ namespace anogame.framework.UI
         /// <param name="pageId">解除するページID</param>
         public void UnregisterPage(string pageId)
         {
-            if (_registeredPages.TryGetValue(pageId, out var page))
+            if (registeredPages.TryGetValue(pageId, out var page))
             {
                 page.OnPageTransition -= OnPageTransitionRequested;
-                _registeredPages.Remove(pageId);
+                registeredPages.Remove(pageId);
+                
+                // スタックからも削除
+                if (pageStack.Contains(page))
+                {
+                    var tempStack = new Stack<IPage>();
+                    while (pageStack.Count > 0)
+                    {
+                        var p = pageStack.Pop();
+                        if (p != page)
+                        {
+                            tempStack.Push(p);
+                        }
+                    }
+                    while (tempStack.Count > 0)
+                    {
+                        pageStack.Push(tempStack.Pop());
+                    }
+                }
+                
                 Debug.Log($"[PageManager] Page '{pageId}' の登録を解除しました");
             }
         }
         
         /// <summary>
-        /// ページに遷移する（スタックをクリア）
+        /// 指定ページに遷移する（スタックを置き換え）
         /// </summary>
-        /// <param name="pageId">遷移先のページID</param>
+        /// <param name="pageId">遷移先ページID</param>
         public void NavigateToPage(string pageId)
         {
-            var targetPage = GetPage(pageId);
-            if (targetPage == null) return;
+            var page = GetPage(pageId);
+            if (page == null) return;
             
-            var currentPage = CurrentPage;
+            var previousPage = CurrentPage;
             
-            // 現在のページを終了
-            currentPage?.Exit();
-            
-            // スタックをクリア
-            _pageStack.Clear();
+            // 現在のページをすべて終了
+            while (pageStack.Count > 0)
+            {
+                var currentPage = pageStack.Pop();
+                currentPage.Exit();
+                currentPage.Hide();
+            }
             
             // 新しいページを開始
-            _pageStack.Push(targetPage);
-            targetPage.Enter();
+            pageStack.Push(page);
+            page.Show();
+            page.Enter();
             
-            OnPageChanged?.Invoke(currentPage, targetPage);
+            OnPageChanged?.Invoke(page, previousPage);
             Debug.Log($"[PageManager] Page '{pageId}' に遷移しました");
         }
         
         /// <summary>
-        /// ページをプッシュする（現在のページの上に重ねる）
+        /// 現在のページの上に新しいページを積む
         /// </summary>
-        /// <param name="pageId">プッシュするページID</param>
+        /// <param name="pageId">追加するページID</param>
         public void PushPage(string pageId)
         {
-            var targetPage = GetPage(pageId);
-            if (targetPage == null) return;
+            var page = GetPage(pageId);
+            if (page == null) return;
             
-            var currentPage = CurrentPage;
+            var previousPage = CurrentPage;
             
-            // 現在のページは隠すだけ（終了はしない）
-            currentPage?.Hide();
+            // 現在のページを一時停止
+            if (previousPage != null)
+            {
+                previousPage.Hide();
+            }
             
-            // 新しいページをスタックにプッシュ
-            _pageStack.Push(targetPage);
-            targetPage.Enter();
+            // 新しいページを開始
+            pageStack.Push(page);
+            page.Show();
+            page.Enter();
             
-            OnPageChanged?.Invoke(currentPage, targetPage);
-            Debug.Log($"[PageManager] Page '{pageId}' をプッシュしました");
+            OnPageChanged?.Invoke(page, previousPage);
+            Debug.Log($"[PageManager] Page '{pageId}' をプッシュしました（深度: {pageStack.Count}）");
         }
         
         /// <summary>
-        /// 現在のページをポップする（前のページに戻る）
+        /// 現在のページを終了して前のページに戻る
         /// </summary>
         /// <returns>戻ることができたかどうか</returns>
         public bool PopPage()
         {
-            if (_pageStack.Count <= 1)
+            if (pageStack.Count <= 1)
             {
                 Debug.LogWarning("[PageManager] 戻るページがありません");
                 return false;
             }
             
-            var currentPage = _pageStack.Pop();
+            var currentPage = pageStack.Pop();
             var previousPage = CurrentPage;
-            
-            // 現在のページに戻る処理を実行してもらう
-            if (!currentPage.OnBackPressed())
-            {
-                // 戻る処理をキャンセルされた場合は元に戻す
-                _pageStack.Push(currentPage);
-                return false;
-            }
             
             // 現在のページを終了
             currentPage.Exit();
+            currentPage.Hide();
             
-            // 前のページを再表示
-            previousPage?.Show();
+            // 前のページを再開
+            if (previousPage != null)
+            {
+                previousPage.Show();
+            }
             
-            OnPageChanged?.Invoke(currentPage, previousPage);
-            Debug.Log($"[PageManager] Page '{currentPage.PageId}' から戻りました");
+            OnPageChanged?.Invoke(previousPage, currentPage);
+            Debug.Log($"[PageManager] Page '{currentPage.PageId}' から '{previousPage?.PageId}' に戻りました");
             return true;
         }
         
@@ -149,7 +171,10 @@ namespace anogame.framework.UI
         /// </summary>
         public void OnBackButtonPressed()
         {
-            PopPage();
+            if (CurrentPage != null && CurrentPage.CanGoBack())
+            {
+                PopPage();
+            }
         }
         
         /// <summary>
@@ -159,7 +184,7 @@ namespace anogame.framework.UI
         /// <returns>ページインスタンス</returns>
         private IPage GetPage(string pageId)
         {
-            if (!_registeredPages.TryGetValue(pageId, out var page))
+            if (!registeredPages.TryGetValue(pageId, out var page))
             {
                 Debug.LogError($"[PageManager] Page '{pageId}' が見つかりません");
                 return null;
@@ -170,22 +195,11 @@ namespace anogame.framework.UI
         /// <summary>
         /// ページからの遷移要求を処理
         /// </summary>
-        /// <param name="targetPage">遷移先のページ</param>
-        private void OnPageTransitionRequested(IPage targetPage)
+        /// <param name="page">遷移要求を出したページ</param>
+        private void OnPageTransitionRequested(IPage page)
         {
-            if (targetPage != null)
-            {
-                PushPage(targetPage.PageId);
-            }
-        }
-        
-        /// <summary>
-        /// 全ページの一覧を取得
-        /// </summary>
-        /// <returns>登録されているページの一覧</returns>
-        public IReadOnlyList<IPage> GetAllPages()
-        {
-            return _registeredPages.Values.ToList();
+            // ページの遷移ロジックが必要な場合はここに実装
+            Debug.Log($"[PageManager] Page '{page.PageId}' から遷移要求を受信しました");
         }
         
         /// <summary>
@@ -194,7 +208,31 @@ namespace anogame.framework.UI
         [ContextMenu("Debug Page Stack")]
         public void DebugPageStack()
         {
-            Debug.Log($"[PageManager] Page Stack: {string.Join(" -> ", _pageStack.Select(p => p.PageId))}");
+            var pages = new List<string>();
+            foreach (var page in pageStack)
+            {
+                pages.Add(page.PageId);
+            }
+            Debug.Log($"[PageManager] Page Stack: {string.Join(" -> ", pages)}");
+        }
+        
+        /// <summary>
+        /// ページスタックの深度を取得
+        /// </summary>
+        public int PageDepth => pageStack.Count;
+        
+        /// <summary>
+        /// 全ページの登録を解除
+        /// </summary>
+        public void UnregisterAllPages()
+        {
+            foreach (var page in registeredPages.Values)
+            {
+                page.OnPageTransition -= OnPageTransitionRequested;
+            }
+            registeredPages.Clear();
+            pageStack.Clear();
+            Debug.Log("[PageManager] 全てのページの登録を解除しました");
         }
     }
 } 

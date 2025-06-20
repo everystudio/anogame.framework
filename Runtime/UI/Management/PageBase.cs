@@ -8,9 +8,9 @@ namespace anogame.framework.UI
     /// </summary>
     public abstract class PageBase : UIViewBase, IPage
     {
-        [SerializeField] private string _pageId;
+        [SerializeField] private string pageId;
         
-        public string PageId => _pageId;
+        public string PageId => pageId;
         
         public event Action<IPage> OnPageTransition;
         
@@ -57,6 +57,16 @@ namespace anogame.framework.UI
         }
         
         /// <summary>
+        /// 戻ることができるかどうか
+        /// デフォルトでは戻ることを許可
+        /// </summary>
+        /// <returns>戻ることが可能な場合はtrue</returns>
+        public virtual bool CanGoBack()
+        {
+            return true;
+        }
+        
+        /// <summary>
         /// 他のページへの遷移を要求
         /// </summary>
         /// <param name="targetPage">遷移先のページ</param>
@@ -70,9 +80,9 @@ namespace anogame.framework.UI
             base.OnInitialize();
             
             // PageIdが設定されていない場合はGameObject名を使用
-            if (string.IsNullOrEmpty(_pageId))
+            if (string.IsNullOrEmpty(pageId))
             {
-                _pageId = gameObject.name;
+                pageId = gameObject.name;
             }
         }
     }

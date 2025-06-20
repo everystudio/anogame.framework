@@ -28,7 +28,7 @@ namespace anogame.framework
             }
 
             // モデルに追加 → UI更新
-            targetPresenter.Model.Add(itemToAdd, amount);
+            targetPresenter.Model.AddItem(itemToAdd, amount);
             targetPresenter.Refresh();
         }
     }

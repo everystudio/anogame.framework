@@ -16,58 +16,71 @@ namespace anogame.framework
         [Header("スキル設定")]
         [SerializeField] private SkillDefinition[] testSkills;
 
-        private BattleManager _battleManager;
-        private BattleUI _battleUI;
+        private BattleManager battleManager;
+        private BattleUI battleUI;
 
         private void Start()
         {
-            _battleManager = FindFirstObjectByType<BattleManager>();
-            _battleUI = FindFirstObjectByType<BattleUI>();
-
-            if (_battleManager == null)
+            battleManager = FindFirstObjectByType<BattleManager>();
+            battleUI = FindFirstObjectByType<BattleUI>();
+            
+            if (battleManager == null)
             {
-                Debug.LogError("BattleManager が見つかりません");
+                Debug.LogError("BattleManagerが見つかりません");
                 return;
             }
-
-            // イベント登録
-            RegisterBattleEvents();
-
+            
+            // startBattleOnStartフラグをチェックして戦闘を開始するかどうか決定
             if (startBattleOnStart)
             {
-                StartTestBattle();
+                SetupTestBattle();
+            }
+            else
+            {
+                Debug.Log("startBattleOnStartがfalseのため、戦闘を自動開始しません");
+            }
+        }
+
+        private void OnEnable()
+        {
+            if (battleManager != null)
+            {
+                battleManager.OnStateChanged += OnBattleStateChanged;
+                battleManager.OnActionExecuted += OnActionExecuted;
+                battleManager.OnParticipantDefeated += OnParticipantDefeated;
+                battleManager.OnBattleEnded += OnBattleEnded;
+                battleManager.OnTurnStarted += OnTurnStarted;
             }
         }
 
         /// <summary>
-        /// 戦闘イベントを登録
-        /// </summary>
-        private void RegisterBattleEvents()
-        {
-            _battleManager.OnStateChanged += OnBattleStateChanged;
-            _battleManager.OnActionExecuted += OnActionExecuted;
-            _battleManager.OnParticipantDefeated += OnParticipantDefeated;
-            _battleManager.OnBattleEnded += OnBattleEnded;
-            _battleManager.OnTurnStarted += OnTurnStarted;
-        }
-
-        /// <summary>
-        /// テスト戦闘を開始
+        /// 手動でテスト戦闘を開始する
         /// </summary>
         [ContextMenu("Start Test Battle")]
         public void StartTestBattle()
         {
+            if (battleManager == null)
+            {
+                Debug.LogError("BattleManagerが見つかりません");
+                return;
+            }
+            
+            SetupTestBattle();
+        }
+        
+        private void SetupTestBattle()
+        {
             var players = CreateTestPlayers();
             var enemies = CreateTestEnemies();
-
-            // UIに戦闘参加者を設定
-            if (_battleUI != null)
+            
+            // UIの初期化
+            if (battleUI != null)
             {
-                _battleUI.InitializeParticipants(players, enemies);
+                battleUI.InitializeParticipants(players, enemies);
             }
-
-            Debug.Log("=== テスト戦闘を開始します ===");
-            _battleManager.StartBattle(players, enemies);
+            
+            // 戦闘開始
+            battleManager.StartBattle(players, enemies);
         }
 
         /// <summary>
@@ -146,9 +159,9 @@ namespace anogame.framework
         {
             Debug.Log($"戦闘状態変更: {newState}");
 
-            if (_battleUI != null)
+            if (battleUI != null)
             {
-                _battleUI.AddLog($"状態: {GetBattleStateText(newState)}");
+                battleUI.AddLog($"状態: {GetBattleStateText(newState)}");
             }
         }
 
@@ -163,9 +176,9 @@ namespace anogame.framework
 
             Debug.Log(message);
 
-            if (_battleUI != null)
+            if (battleUI != null)
             {
-                _battleUI.AddLog(message);
+                battleUI.AddLog(message);
             }
         }
 
@@ -174,9 +187,9 @@ namespace anogame.framework
             string message = $"{participant.Name} が倒れた！";
             Debug.Log(message);
 
-            if (_battleUI != null)
+            if (battleUI != null)
             {
-                _battleUI.AddLog(message);
+                battleUI.AddLog(message);
             }
         }
 
@@ -185,9 +198,9 @@ namespace anogame.framework
             string message = $"戦闘終了: {GetBattleResultText(result)}";
             Debug.Log(message);
 
-            if (_battleUI != null)
+            if (battleUI != null)
             {
-                _battleUI.AddLog(message);
+                battleUI.AddLog(message);
             }
         }
 
@@ -195,10 +208,10 @@ namespace anogame.framework
         {
             Debug.Log($"ターン {turnNumber} 開始");
 
-            if (_battleUI != null)
+            if (battleUI != null)
             {
-                _battleUI.UpdateTurnInfo(turnNumber);
-                _battleUI.AddLog($"--- ターン {turnNumber} ---");
+                battleUI.UpdateTurnInfo(turnNumber);
+                battleUI.AddLog($"--- ターン {turnNumber} ---");
             }
         }
 
@@ -247,13 +260,13 @@ namespace anogame.framework
         private void OnDestroy()
         {
             // イベント登録解除
-            if (_battleManager != null)
+            if (battleManager != null)
             {
-                _battleManager.OnStateChanged -= OnBattleStateChanged;
-                _battleManager.OnActionExecuted -= OnActionExecuted;
-                _battleManager.OnParticipantDefeated -= OnParticipantDefeated;
-                _battleManager.OnBattleEnded -= OnBattleEnded;
-                _battleManager.OnTurnStarted -= OnTurnStarted;
+                battleManager.OnStateChanged -= OnBattleStateChanged;
+                battleManager.OnActionExecuted -= OnActionExecuted;
+                battleManager.OnParticipantDefeated -= OnParticipantDefeated;
+                battleManager.OnBattleEnded -= OnBattleEnded;
+                battleManager.OnTurnStarted -= OnTurnStarted;
             }
         }
     }

@@ -6,40 +6,41 @@ namespace anogame.framework
 {
     public class InventoryModel
     {
-        private readonly List<InventoryItem> _items = new();
+        private readonly List<InventoryItem> items = new();
 
-        public IReadOnlyList<InventoryItem> Items => _items;
+        public IReadOnlyList<InventoryItem> Items => items;
 
-        public void Add(ItemDefinition item, int amount = 1)
+        public void AddItem(ItemDefinition item, int amount = 1)
         {
-            if (item.IsStackable)
+            if (item == null) return;
+
+            var existing = items.FirstOrDefault(i => i.Item == item);
+            if (existing != null)
             {
-                var existing = _items.FirstOrDefault(i => i.Item == item);
-                if (existing != null)
-                {
-                    existing.Amount += amount;
-                    return;
-                }
-            }
-
-            _items.Add(new InventoryItem(item, amount));
-        }
-
-        public bool Remove(ItemDefinition item, int amount = 1)
-        {
-            var entry = _items.FirstOrDefault(i => i.Item == item);
-            if (entry == null)
-                return false;
-
-            if (entry.Item.IsStackable)
-            {
-                entry.Amount -= amount;
-                if (entry.Amount <= 0)
-                    _items.Remove(entry);
+                // 既存アイテムの数量を増加
+                existing.Amount += amount;
             }
             else
             {
-                _items.Remove(entry);
+                // 新しいアイテムを追加
+                items.Add(new InventoryItem(item, amount));
+            }
+        }
+
+        public bool RemoveItem(ItemDefinition item, int amount = 1)
+        {
+            var entry = items.FirstOrDefault(i => i.Item == item);
+            if (entry == null || entry.Amount < amount)
+                return false;
+
+            entry.Amount -= amount;
+            if (entry.Amount <= 0)
+            {
+                items.Remove(entry);
+            }
+            else
+            {
+                items.Remove(entry);
             }
 
             return true;
@@ -47,7 +48,7 @@ namespace anogame.framework
 
         public void Clear()
         {
-            _items.Clear();
+            items.Clear();
         }
     }
 }

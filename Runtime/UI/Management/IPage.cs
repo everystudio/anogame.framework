@@ -40,6 +40,12 @@ namespace anogame.framework.UI
         bool OnBackPressed();
         
         /// <summary>
+        /// 戻ることができるかどうか
+        /// </summary>
+        /// <returns>戻ることが可能な場合はtrue</returns>
+        bool CanGoBack();
+        
+        /// <summary>
         /// ページ遷移イベント
         /// </summary>
         event Action<IPage> OnPageTransition;

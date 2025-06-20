@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace anogame.framework.UI.Examples
+namespace anogame.framework.UI
 {
     /// <summary>
     /// ページの使用例
@@ -9,125 +9,102 @@ namespace anogame.framework.UI.Examples
     public class ExamplePage : PageBase
     {
         [Header("UI要素")]
-        [SerializeField] private Button _nextPageButton;
-        [SerializeField] private Button _openModalButton;
-        [SerializeField] private Button _backButton;
-        [SerializeField] private Text _pageTitle;
+        [SerializeField] private Button nextPageButton;
+        [SerializeField] private Button openModalButton;
+        [SerializeField] private Button backButton;
+        [SerializeField] private Text pageTitle;
         
         [Header("設定")]
-        [SerializeField] private string _nextPageId;
-        [SerializeField] private string _modalId;
+        [SerializeField] private string nextPageId;
+        [SerializeField] private string modalId;
         
         protected override void OnInitialize()
         {
             base.OnInitialize();
             
+            // UIの初期設定
+            if (pageTitle != null)
+            {
+                pageTitle.text = $"Page: {PageId}";
+            }
+            
             // ボタンイベントの設定
-            if (_nextPageButton != null)
+            if (nextPageButton != null)
             {
-                _nextPageButton.onClick.AddListener(OnNextPageButtonClicked);
+                nextPageButton.onClick.AddListener(GoToNextPage);
             }
             
-            if (_openModalButton != null)
+            if (openModalButton != null)
             {
-                _openModalButton.onClick.AddListener(OnOpenModalButtonClicked);
+                openModalButton.onClick.AddListener(OpenModal);
             }
             
-            if (_backButton != null)
+            if (backButton != null)
             {
-                _backButton.onClick.AddListener(OnBackButtonClicked);
+                backButton.onClick.AddListener(GoBack);
             }
         }
         
         public override void OnEnter()
         {
-            base.OnEnter();
+            Debug.Log($"[ExamplePage] '{PageId}' に入りました");
             
-            // ページタイトルの設定
-            if (_pageTitle != null)
-            {
-                _pageTitle.text = $"ページ: {PageId}";
-            }
-            
-            Debug.Log($"[ExamplePage] ページ '{PageId}' に入りました");
+            // ページに入った時の処理をここに実装
+            // アニメーションや初期化など
         }
         
         public override void OnExit()
         {
-            Debug.Log($"[ExamplePage] ページ '{PageId}' から出ます");
-            base.OnExit();
+            Debug.Log($"[ExamplePage] '{PageId}' から出ました");
+            
+            // ページから出る時の処理をここに実装
+            // 状態保存やクリーンアップなど
         }
         
-        public override void OnShow()
+        public override bool CanGoBack()
         {
-            Debug.Log($"[ExamplePage] ページ '{PageId}' を表示しました");
+            // 戻ることができるかどうかの判定
+            // 例：未保存のデータがある場合は false を返す
+            return true;
         }
         
-        public override void OnHide()
+        private void GoToNextPage()
         {
-            Debug.Log($"[ExamplePage] ページ '{PageId}' を非表示にしました");
-        }
-        
-        /// <summary>
-        /// 次のページボタンが押された時の処理
-        /// </summary>
-        private void OnNextPageButtonClicked()
-        {
-            if (!string.IsNullOrEmpty(_nextPageId))
+            if (!string.IsNullOrEmpty(nextPageId))
             {
-                PageManager.Instance.PushPage(_nextPageId);
+                PageManager.Instance.PushPage(nextPageId);
             }
         }
         
-        /// <summary>
-        /// モーダルを開くボタンが押された時の処理
-        /// </summary>
-        private void OnOpenModalButtonClicked()
+        private void OpenModal()
         {
-            if (!string.IsNullOrEmpty(_modalId))
+            if (!string.IsNullOrEmpty(modalId))
             {
-                ModalManager.Instance.OpenModal(_modalId);
+                ModalManager.Instance.OpenModal(modalId);
             }
         }
         
-        /// <summary>
-        /// 戻るボタンが押された時の処理
-        /// </summary>
-        private void OnBackButtonClicked()
+        private void GoBack()
         {
             PageManager.Instance.PopPage();
-        }
-        
-        /// <summary>
-        /// 戻る処理のカスタマイズ例
-        /// </summary>
-        /// <returns>戻る処理を実行するかどうか</returns>
-        public override bool OnBackPressed()
-        {
-            // 例：確認ダイアログを表示してから戻る
-            Debug.Log($"[ExamplePage] ページ '{PageId}' で戻る処理が要求されました");
-            
-            // 通常は true を返して戻る処理を許可
-            // false を返すと戻る処理をキャンセルできる
-            return true;
         }
         
         protected override void OnCleanup()
         {
             // ボタンイベントのクリーンアップ
-            if (_nextPageButton != null)
+            if (nextPageButton != null)
             {
-                _nextPageButton.onClick.RemoveListener(OnNextPageButtonClicked);
+                nextPageButton.onClick.RemoveListener(GoToNextPage);
             }
             
-            if (_openModalButton != null)
+            if (openModalButton != null)
             {
-                _openModalButton.onClick.RemoveListener(OnOpenModalButtonClicked);
+                openModalButton.onClick.RemoveListener(OpenModal);
             }
             
-            if (_backButton != null)
+            if (backButton != null)
             {
-                _backButton.onClick.RemoveListener(OnBackButtonClicked);
+                backButton.onClick.RemoveListener(GoBack);
             }
             
             base.OnCleanup();

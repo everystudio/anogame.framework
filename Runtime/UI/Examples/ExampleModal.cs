@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace anogame.framework.UI.Examples
+namespace anogame.framework.UI
 {
     /// <summary>
     /// モーダルの使用例
@@ -9,150 +9,121 @@ namespace anogame.framework.UI.Examples
     public class ExampleModal : ModalBase
     {
         [Header("UI要素")]
-        [SerializeField] private Button _closeButton;
-        [SerializeField] private Button _openSubModalButton;
-        [SerializeField] private Button _backgroundButton;
-        [SerializeField] private Text _modalTitle;
-        [SerializeField] private Text _modalContent;
+        [SerializeField] private Button closeButton;
+        [SerializeField] private Button openSubModalButton;
+        [SerializeField] private Button backgroundButton;
+        [SerializeField] private Text modalTitle;
+        [SerializeField] private Text modalContent;
         
         [Header("設定")]
-        [SerializeField] private string _subModalId;
-        [SerializeField] private string _modalMessage = "これはサンプルモーダルです";
+        [SerializeField] private string subModalId;
+        [SerializeField] private string modalMessage = "これはサンプルモーダルです";
         
         protected override void OnInitialize()
         {
             base.OnInitialize();
             
+            // UIの初期設定
+            if (modalTitle != null)
+            {
+                modalTitle.text = $"Modal: {ModalId}";
+            }
+            
+            if (modalContent != null)
+            {
+                modalContent.text = modalMessage;
+            }
+            
             // ボタンイベントの設定
-            if (_closeButton != null)
+            if (closeButton != null)
             {
-                _closeButton.onClick.AddListener(OnCloseButtonClicked);
+                closeButton.onClick.AddListener(RequestClose);
             }
             
-            if (_openSubModalButton != null)
+            if (openSubModalButton != null)
             {
-                _openSubModalButton.onClick.AddListener(OnOpenSubModalButtonClicked);
+                openSubModalButton.onClick.AddListener(OpenSubModal);
             }
             
-            if (_backgroundButton != null)
+            if (backgroundButton != null)
             {
-                _backgroundButton.onClick.AddListener(OnBackgroundClick);
+                backgroundButton.onClick.AddListener(OnBackgroundClick);
             }
         }
         
         public override void OnOpen()
         {
-            base.OnOpen();
+            Debug.Log($"[ExampleModal] '{ModalId}' が開かれました");
             
-            // モーダルタイトルとコンテンツの設定
-            if (_modalTitle != null)
+            // 開く時のアニメーションなどをここに実装
+            if (transform is RectTransform rectTransform)
             {
-                _modalTitle.text = $"モーダル: {ModalId}";
+                rectTransform.localScale = Vector3.one * 0.8f;
+                // 簡単なスケールアニメーション（LeanTweenの代わりにCoroutineを使用）
+                StartCoroutine(ScaleAnimation(rectTransform));
             }
-            
-            if (_modalContent != null)
-            {
-                _modalContent.text = _modalMessage;
-            }
-            
-            Debug.Log($"[ExampleModal] モーダル '{ModalId}' を開きました");
         }
         
-        public override bool OnClosing()
+        private System.Collections.IEnumerator ScaleAnimation(RectTransform rectTransform)
         {
-            Debug.Log($"[ExampleModal] モーダル '{ModalId}' の閉じる処理が要求されました");
+            float duration = 0.3f;
+            float elapsed = 0f;
+            Vector3 startScale = rectTransform.localScale;
+            Vector3 targetScale = Vector3.one;
             
-            // 例：保存確認などの処理をここで行う
-            // 閉じることを許可する場合は true を返す
-            // 閉じることを拒否する場合は false を返す
-            return true;
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = elapsed / duration;
+                // イーズアウトバック風の補間
+                t = 1f - Mathf.Pow(1f - t, 3f);
+                rectTransform.localScale = Vector3.Lerp(startScale, targetScale, t);
+                yield return null;
+            }
+            
+            rectTransform.localScale = targetScale;
         }
         
         public override void OnClose()
         {
-            Debug.Log($"[ExampleModal] モーダル '{ModalId}' を閉じました");
-            base.OnClose();
-        }
-        
-        public override void OnShow()
-        {
-            Debug.Log($"[ExampleModal] モーダル '{ModalId}' を表示しました");
-        }
-        
-        public override void OnHide()
-        {
-            Debug.Log($"[ExampleModal] モーダル '{ModalId}' を非表示にしました");
-        }
-        
-        /// <summary>
-        /// 閉じるボタンが押された時の処理
-        /// </summary>
-        private void OnCloseButtonClicked()
-        {
-            RequestClose();
-        }
-        
-        /// <summary>
-        /// サブモーダルを開くボタンが押された時の処理
-        /// </summary>
-        private void OnOpenSubModalButtonClicked()
-        {
-            if (!string.IsNullOrEmpty(_subModalId))
-            {
-                ModalManager.Instance.OpenModal(_subModalId);
-            }
-        }
-        
-        /// <summary>
-        /// カスタムメッセージを設定
-        /// </summary>
-        /// <param name="message">表示するメッセージ</param>
-        public void SetMessage(string message)
-        {
-            _modalMessage = message;
-            if (_modalContent != null)
-            {
-                _modalContent.text = message;
-            }
-        }
-        
-        /// <summary>
-        /// 背景クリック処理のオーバーライド例
-        /// </summary>
-        public override void OnBackgroundClick()
-        {
-            Debug.Log($"[ExampleModal] モーダル '{ModalId}' の背景がクリックされました");
-            base.OnBackgroundClick(); // 基底クラスの処理を呼び出す
-        }
-        
-        protected override void Update()
-        {
-            base.Update();
+            Debug.Log($"[ExampleModal] '{ModalId}' が閉じられました");
             
-            // カスタムキー処理の例
-            if (Input.GetKeyDown(KeyCode.Return))
+            // 閉じる時のアニメーションなどをここに実装
+        }
+        
+        public override bool OnClosing()
+        {
+            Debug.Log($"[ExampleModal] '{ModalId}' を閉じようとしています");
+            
+            // 閉じる前の確認処理
+            // falseを返すと閉じる処理をキャンセルできる
+            return true;
+        }
+        
+        private void OpenSubModal()
+        {
+            if (!string.IsNullOrEmpty(subModalId))
             {
-                // Enterキーでも閉じることができる
-                RequestClose();
+                ModalManager.Instance.OpenModal(subModalId);
             }
         }
         
         protected override void OnCleanup()
         {
             // ボタンイベントのクリーンアップ
-            if (_closeButton != null)
+            if (closeButton != null)
             {
-                _closeButton.onClick.RemoveListener(OnCloseButtonClicked);
+                closeButton.onClick.RemoveListener(RequestClose);
             }
             
-            if (_openSubModalButton != null)
+            if (openSubModalButton != null)
             {
-                _openSubModalButton.onClick.RemoveListener(OnOpenSubModalButtonClicked);
+                openSubModalButton.onClick.RemoveListener(OpenSubModal);
             }
             
-            if (_backgroundButton != null)
+            if (backgroundButton != null)
             {
-                _backgroundButton.onClick.RemoveListener(OnBackgroundClick);
+                backgroundButton.onClick.RemoveListener(OnBackgroundClick);
             }
             
             base.OnCleanup();

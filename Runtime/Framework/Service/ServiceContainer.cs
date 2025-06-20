@@ -1,55 +1,64 @@
 // Packages/anogame.framework/Runtime/Service/ServiceContainer.cs
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace anogame.framework
 {
     public static class ServiceContainer
     {
-        private static readonly Dictionary<Type, object> _services = new();
+        private static readonly Dictionary<Type, object> services = new();
 
         /// <summary>
-        /// サービスを登録します。
+        /// サービスを登録する
         /// </summary>
         public static void Register<T>(T service) where T : class
         {
             var type = typeof(T);
-            if (_services.ContainsKey(type))
+            if (services.ContainsKey(type))
             {
-                UnityEngine.Debug.LogWarning($"Service of type {type.Name} is already registered. Overwriting.");
+                Debug.LogWarning($"Service {type.Name} is already registered. Overwriting.");
             }
-            _services[type] = service;
+            services[type] = service;
         }
 
         /// <summary>
-        /// サービスを取得します。
+        /// サービスを取得する
         /// </summary>
-        public static T Resolve<T>() where T : class
+        public static T Get<T>() where T : class
         {
             var type = typeof(T);
-            if (_services.TryGetValue(type, out var service))
+            if (services.TryGetValue(type, out var service))
             {
                 return service as T;
             }
-
-            UnityEngine.Debug.LogError($"Service of type {type.Name} is not registered.");
             return null;
         }
 
         /// <summary>
-        /// サービスを解除します。
+        /// サービスが登録されているかチェック
         /// </summary>
-        public static void Unregister<T>() where T : class
+        public static bool IsRegistered<T>() where T : class
         {
-            _services.Remove(typeof(T));
+            return services.ContainsKey(typeof(T));
         }
 
         /// <summary>
-        /// すべてのサービスをクリアします。
+        /// サービスの登録を解除する
+        /// </summary>
+        public static void Unregister<T>() where T : class
+        {
+            services.Remove(typeof(T));
+        }
+
+        /// <summary>
+        /// 全てのサービスをクリア
         /// </summary>
         public static void Clear()
         {
-            _services.Clear();
+            services.Clear();
         }
     }
 }
+
+

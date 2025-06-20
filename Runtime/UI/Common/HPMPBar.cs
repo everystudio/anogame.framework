@@ -28,86 +28,99 @@ namespace anogame.framework
         [SerializeField] private float animationSpeed = 2.0f;
         [SerializeField] private bool useAnimation = true;
 
-        private CharacterStatus _targetStatus;
-        private float _currentHPRatio;
-        private float _currentMPRatio;
+        private CharacterStatus targetStatus;
+        private float currentHPRatio;
+        private float currentMPRatio;
 
         /// <summary>
-        /// 対象キャラクターを設定
+        /// 対象のキャラクターステータスを設定
         /// </summary>
+        /// <param name="status">対象のキャラクターステータス</param>
         public void SetTarget(CharacterStatus status)
         {
-            _targetStatus = status;
-            if (_targetStatus != null)
+            targetStatus = status;
+            if (targetStatus != null)
             {
-                UpdateBarsImmediate();
+                UpdateImmediate();
             }
+        }
+
+        private void Start()
+        {
+            if (targetStatus != null)
+            {
+                UpdateImmediate();
+            }
+        }
+
+        /// <summary>
+        /// 即座にUIを更新（アニメーションなし）
+        /// </summary>
+        public void UpdateImmediate()
+        {
+            if (targetStatus == null) return;
+
+            // HP
+            float targetHPRatio = (float)targetStatus.CurrentHP / targetStatus.MaxHP;
+            currentHPRatio = targetHPRatio;
+            
+            // MP
+            if (targetStatus.MaxMP > 0)
+            {
+                float targetMPRatio = (float)targetStatus.CurrentMP / targetStatus.MaxMP;
+                currentMPRatio = targetMPRatio;
+            }
+            
+            UpdateDisplay();
         }
 
         private void Update()
         {
-            if (_targetStatus != null)
+            if (targetStatus == null) return;
+
+            // HP の更新
+            float targetHPRatio = (float)targetStatus.CurrentHP / targetStatus.MaxHP;
+            if (Mathf.Abs(currentHPRatio - targetHPRatio) > 0.001f)
             {
-                UpdateBars();
+                if (useAnimation)
+                {
+                    currentHPRatio = Mathf.MoveTowards(currentHPRatio, targetHPRatio,
+                        animationSpeed * Time.deltaTime);
+                }
+                else
+                {
+                    currentHPRatio = targetHPRatio;
+                }
             }
+            
+            // MP の更新
+            if (targetStatus.MaxMP > 0)
+            {
+                float targetMPRatio = (float)targetStatus.CurrentMP / targetStatus.MaxMP;
+                if (Mathf.Abs(currentMPRatio - targetMPRatio) > 0.001f)
+                {
+                    if (useAnimation)
+                    {
+                        currentMPRatio = Mathf.MoveTowards(currentMPRatio, targetMPRatio,
+                            animationSpeed * Time.deltaTime);
+                    }
+                    else
+                    {
+                        currentMPRatio = targetMPRatio;
+                    }
+                }
+            }
+
+            UpdateDisplay();
         }
 
         /// <summary>
-        /// バーを即座に更新
+        /// 表示を更新
         /// </summary>
-        private void UpdateBarsImmediate()
+        private void UpdateDisplay()
         {
-            if (_targetStatus == null) return;
-
-            // HP更新
-            float targetHPRatio = (float)_targetStatus.CurrentHP / _targetStatus.MaxHP;
-            _currentHPRatio = targetHPRatio;
             UpdateHPDisplay();
-
-            // MP更新
-            float targetMPRatio = (float)_targetStatus.CurrentMP / _targetStatus.MaxMP;
-            _currentMPRatio = targetMPRatio;
             UpdateMPDisplay();
-        }
-
-        /// <summary>
-        /// バーをアニメーション付きで更新
-        /// </summary>
-        private void UpdateBars()
-        {
-            if (_targetStatus == null) return;
-
-            // HP更新
-            float targetHPRatio = (float)_targetStatus.CurrentHP / _targetStatus.MaxHP;
-            if (Mathf.Abs(_currentHPRatio - targetHPRatio) > 0.001f)
-            {
-                if (useAnimation)
-                {
-                    _currentHPRatio = Mathf.MoveTowards(_currentHPRatio, targetHPRatio, 
-                        animationSpeed * Time.deltaTime);
-                }
-                else
-                {
-                    _currentHPRatio = targetHPRatio;
-                }
-                UpdateHPDisplay();
-            }
-
-            // MP更新
-            float targetMPRatio = (float)_targetStatus.CurrentMP / _targetStatus.MaxMP;
-            if (Mathf.Abs(_currentMPRatio - targetMPRatio) > 0.001f)
-            {
-                if (useAnimation)
-                {
-                    _currentMPRatio = Mathf.MoveTowards(_currentMPRatio, targetMPRatio, 
-                        animationSpeed * Time.deltaTime);
-                }
-                else
-                {
-                    _currentMPRatio = targetMPRatio;
-                }
-                UpdateMPDisplay();
-            }
         }
 
         /// <summary>
@@ -117,19 +130,21 @@ namespace anogame.framework
         {
             if (hpSlider != null)
             {
-                hpSlider.value = _currentHPRatio;
+                hpSlider.value = currentHPRatio;
             }
 
             if (hpText != null)
             {
-                hpText.text = $"{_targetStatus.CurrentHP} / {_targetStatus.MaxHP}";
+                hpText.text = $"{targetStatus.CurrentHP} / {targetStatus.MaxHP}";
             }
 
-            if (hpFillImage != null)
+            if (hpSlider != null && hpSlider.fillRect != null)
             {
-                // HPが少ない時は色を変更
-                Color targetColor = _currentHPRatio <= lowHPThreshold ? lowHPColor : fullHPColor;
-                hpFillImage.color = targetColor;
+                Color targetColor = currentHPRatio <= lowHPThreshold ? lowHPColor : fullHPColor;
+                if (hpSlider.fillRect.GetComponent<Image>() != null)
+                {
+                    hpSlider.fillRect.GetComponent<Image>().color = targetColor;
+                }
             }
         }
 
@@ -140,19 +155,21 @@ namespace anogame.framework
         {
             if (mpSlider != null)
             {
-                mpSlider.value = _currentMPRatio;
+                mpSlider.value = currentMPRatio;
             }
 
             if (mpText != null)
             {
-                mpText.text = $"{_targetStatus.CurrentMP} / {_targetStatus.MaxMP}";
+                mpText.text = $"{targetStatus.CurrentMP} / {targetStatus.MaxMP}";
             }
 
-            if (mpFillImage != null)
+            if (mpSlider != null && mpSlider.fillRect != null)
             {
-                // MPの色設定
-                Color targetColor = _currentMPRatio <= 0.3f ? lowMPColor : fullMPColor;
-                mpFillImage.color = targetColor;
+                Color targetColor = currentMPRatio <= 0.3f ? lowMPColor : fullMPColor;
+                if (mpSlider.fillRect.GetComponent<Image>() != null)
+                {
+                    mpSlider.fillRect.GetComponent<Image>().color = targetColor;
+                }
             }
         }
 

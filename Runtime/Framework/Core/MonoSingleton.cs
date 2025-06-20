@@ -5,28 +5,45 @@ namespace anogame.framework
 {
     public abstract class MonoSingleton<T> : MonoBehaviour where T : MonoBehaviour
     {
-        private static T _instance;
-        private static bool _shuttingDown;
+        private static T instance;
+        private static bool shuttingDown;
 
         public static T Instance
         {
             get
             {
-                if (_shuttingDown) return null;
+                if (shuttingDown) return null;
 
-                if (_instance == null)
+                if (instance == null)
                 {
-                    _instance = FindFirstObjectByType<T>();
+                    instance = FindFirstObjectByType<T>();
 
-                    if (_instance == null)
+                    if (instance == null)
                     {
-                        var obj = new GameObject(typeof(T).Name);
-                        _instance = obj.AddComponent<T>();
-                        DontDestroyOnLoad(obj);
+                        GameObject obj = new GameObject();
+                        obj.name = typeof(T).Name;
+                        instance = obj.AddComponent<T>();
                     }
                 }
 
-                return _instance;
+                return instance;
+            }
+        }
+
+        /// <summary>
+        /// インスタンスが存在するかどうか
+        /// </summary>
+        public static bool HasInstance => instance != null && !shuttingDown;
+
+        /// <summary>
+        /// インスタンスを破棄
+        /// </summary>
+        public static void DestroyInstance()
+        {
+            if (instance != null)
+            {
+                DestroyImmediate(instance.gameObject);
+                instance = null;
             }
         }
 
@@ -41,28 +58,26 @@ namespace anogame.framework
         /// <summary>
         /// Unity標準のAwake。OnInitializeを呼び出す
         /// </summary>
-        private void Awake()
+        protected virtual void Awake()
         {
-            // インスタンスの設定確認
-            if (_instance == null)
+            if (instance == null)
             {
-                _instance = this as T;
-                DontDestroyOnLoad(gameObject);
+                instance = this as T;
                 OnInitialize();
             }
-            else if (_instance != this)
+            else if (instance != this)
             {
-                // 既に他のインスタンスが存在する場合は削除
+                Debug.LogWarning($"[MonoSingleton] {typeof(T).Name} の複数のインスタンスが検出されました。重複するインスタンスを削除します。");
                 Destroy(gameObject);
             }
         }
         
-        protected virtual void OnApplicationQuit() => _shuttingDown = true;
+        protected virtual void OnApplicationQuit() => shuttingDown = true;
         protected virtual void OnDestroy()
         {
-            if (_instance == this)
+            if (instance == this)
             {
-                _shuttingDown = true;
+                shuttingDown = true;
             }
         }
     }

@@ -3,7 +3,7 @@ namespace anogame.framework
 {
     public abstract class Singleton<T> where T : class, new()
     {
-        private static T _instance;
-        public static T Instance => _instance ??= new T();
+        private static T instance;
+        public static T Instance => instance ??= new T();
     }
 }

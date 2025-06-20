@@ -8,15 +8,15 @@ namespace anogame.framework.UI
     /// </summary>
     public abstract class ModalBase : UIViewBase, IModal
     {
-        [SerializeField] private string _modalId;
-        [SerializeField] private int _sortOrder = 0;
-        [SerializeField] private bool _canCloseByBackgroundClick = true;
-        [SerializeField] private bool _canCloseByEscapeKey = true;
+        [SerializeField] private string modalId;
+        [SerializeField] private int sortOrder = 0;
+        [SerializeField] private bool canCloseByBackgroundClick = true;
+        [SerializeField] private bool canCloseByEscapeKey = true;
         
-        public string ModalId => _modalId;
-        public int SortOrder { get => _sortOrder; set => _sortOrder = value; }
-        public bool CanCloseByBackgroundClick => _canCloseByBackgroundClick;
-        public bool CanCloseByEscapeKey => _canCloseByEscapeKey;
+        public string ModalId => modalId;
+        public int SortOrder { get => sortOrder; set => sortOrder = value; }
+        public bool CanCloseByBackgroundClick => canCloseByBackgroundClick;
+        public bool CanCloseByEscapeKey => canCloseByEscapeKey;
         
         public event Action<IModal> OnCloseRequested;
         
@@ -73,16 +73,16 @@ namespace anogame.framework.UI
             base.OnInitialize();
             
             // ModalIdが設定されていない場合はGameObject名を使用
-            if (string.IsNullOrEmpty(_modalId))
+            if (string.IsNullOrEmpty(modalId))
             {
-                _modalId = gameObject.name;
+                modalId = gameObject.name;
             }
         }
         
         protected virtual void Update()
         {
             // ESCキーでの閉じる処理
-            if (_canCloseByEscapeKey && Input.GetKeyDown(KeyCode.Escape))
+            if (canCloseByEscapeKey && Input.GetKeyDown(KeyCode.Escape))
             {
                 RequestClose();
             }
@@ -93,7 +93,7 @@ namespace anogame.framework.UI
         /// </summary>
         public virtual void OnBackgroundClick()
         {
-            if (_canCloseByBackgroundClick)
+            if (canCloseByBackgroundClick)
             {
                 RequestClose();
             }

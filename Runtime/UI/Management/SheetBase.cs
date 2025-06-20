@@ -8,12 +8,12 @@ namespace anogame.framework.UI
     /// </summary>
     public abstract class SheetBase : UIViewBase, ISheet
     {
-        [SerializeField] private string _sheetId;
-        [SerializeField] private bool _isActive = false;
+        [SerializeField] private string sheetId;
+        [SerializeField] private bool isActive = false;
         
-        public string SheetId => _sheetId;
+        public string SheetId => sheetId;
         public IUIView Parent { get; set; }
-        public bool IsActive => _isActive;
+        public bool IsActive => isActive;
         
         public event Action<bool> OnActiveChanged;
         
@@ -22,9 +22,9 @@ namespace anogame.framework.UI
         /// </summary>
         public virtual void Activate()
         {
-            if (_isActive) return;
+            if (isActive) return;
             
-            _isActive = true;
+            isActive = true;
             OnActivate();
             OnActiveChanged?.Invoke(true);
         }
@@ -34,9 +34,9 @@ namespace anogame.framework.UI
         /// </summary>
         public virtual void Deactivate()
         {
-            if (!_isActive) return;
+            if (!isActive) return;
             
-            _isActive = false;
+            isActive = false;
             OnDeactivate();
             OnActiveChanged?.Invoke(false);
         }
@@ -62,16 +62,16 @@ namespace anogame.framework.UI
             base.OnInitialize();
             
             // SheetIdが設定されていない場合はGameObject名を使用
-            if (string.IsNullOrEmpty(_sheetId))
+            if (string.IsNullOrEmpty(sheetId))
             {
-                _sheetId = gameObject.name;
+                sheetId = gameObject.name;
             }
         }
         
         protected virtual void Start()
         {
             // 初期状態でアクティブな場合は処理を実行
-            if (_isActive)
+            if (isActive)
             {
                 OnActivate();
             }

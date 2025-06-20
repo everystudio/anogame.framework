@@ -6,11 +6,11 @@ namespace anogame.framework
 {
     public static class GameStateManager
     {
-        private static readonly Stack<GameState> _stateStack = new();
+        private static readonly Stack<GameState> stateStack = new();
 
-        public static GameState Current => _stateStack.Count > 0 ? _stateStack.Peek() : GameState.None;
+        public static GameState Current => stateStack.Count > 0 ? stateStack.Peek() : GameState.None;
 
-        private static readonly List<IGameStateHandler> _handlers = new();
+        private static readonly List<IGameStateHandler> handlers = new();
 
         /// <summary>
         /// 状態を変更（スタックをクリアして新しい状態にする）
@@ -20,31 +20,31 @@ namespace anogame.framework
         public static void SetState(GameState newState)
         {
             var oldState = Current;
-            _stateStack.Clear();
-            _stateStack.Push(newState);
+            stateStack.Clear();
+            stateStack.Push(newState);
             NotifyTransition(oldState, newState);
         }
 
         public static void PushState(GameState newState)
         {
             var oldState = Current;
-            _stateStack.Push(newState);
+            stateStack.Push(newState);
             NotifyTransition(oldState, newState);
         }
 
         public static void PopState()
         {
-            if (_stateStack.Count == 0)
+            if (stateStack.Count == 0)
                 return;
 
-            var oldState = _stateStack.Pop();
+            var oldState = stateStack.Pop();
             var newState = Current;
             NotifyTransition(oldState, newState);
         }
 
         private static void NotifyTransition(GameState oldState, GameState newState)
         {
-            foreach (var handler in _handlers)
+            foreach (var handler in handlers)
             {
                 if (handler.TargetState == oldState)
                 {
@@ -52,7 +52,7 @@ namespace anogame.framework
                 }
             }
 
-            foreach (var handler in _handlers)
+            foreach (var handler in handlers)
             {
                 if (handler.TargetState == newState)
                 {
@@ -65,15 +65,15 @@ namespace anogame.framework
 
         public static void RegisterHandler(IGameStateHandler handler)
         {
-            if (!_handlers.Contains(handler))
+            if (!handlers.Contains(handler))
             {
-                _handlers.Add(handler);
+                handlers.Add(handler);
             }
         }
 
         public static void UnregisterHandler(IGameStateHandler handler)
         {
-            _handlers.Remove(handler);
+            handlers.Remove(handler);
         }
     }
 }

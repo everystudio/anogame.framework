@@ -20,9 +20,9 @@ namespace anogame.framework
         public int CurrentTurn { get; private set; } = 0;
 
         // 戦闘参加者
-        private List<BattleParticipant> _playerParty = new();
-        private List<BattleParticipant> _enemyParty = new();
-        private ActionQueue _actionQueue = new();
+        private List<BattleParticipant> playerParty = new();
+        private List<BattleParticipant> enemyParty = new();
+        private ActionQueue actionQueue = new();
 
         // イベント
         public event Action<BattleState> OnStateChanged;
@@ -32,11 +32,16 @@ namespace anogame.framework
         public event Action<int> OnTurnStarted;
 
         // UI参照
-        private IBattleUI _battleUI;
+        private IBattleUI battleUI;
 
         private void Start()
         {
-            _battleUI = FindFirstObjectByType<BattleUI>();
+            battleUI = FindFirstObjectByType<BattleUI>();
+            
+            if (battleUI != null)
+            {
+                battleUI.InitializeParticipants(playerParty, enemyParty);
+            }
         }
 
         /// <summary>
@@ -44,18 +49,12 @@ namespace anogame.framework
         /// </summary>
         public void StartBattle(List<BattleParticipant> playerParty, List<BattleParticipant> enemyParty)
         {
-            if (playerParty == null || enemyParty == null || 
-                playerParty.Count == 0 || enemyParty.Count == 0)
-            {
-                Debug.LogError("無効な戦闘参加者です");
-                return;
-            }
-
-            _playerParty = new List<BattleParticipant>(playerParty);
-            _enemyParty = new List<BattleParticipant>(enemyParty);
-            CurrentTurn = 0;
-
-            ChangeState(BattleState.Starting);
+            this.playerParty = new List<BattleParticipant>(playerParty);
+            this.enemyParty = new List<BattleParticipant>(enemyParty);
+            
+            CurrentState = BattleState.Starting;
+            OnStateChanged?.Invoke(CurrentState);
+            
             StartCoroutine(BattleLoop());
         }
 
@@ -122,11 +121,11 @@ namespace anogame.framework
         /// </summary>
         private IEnumerator CollectActions()
         {
-            _actionQueue.Clear();
+            actionQueue.Clear();
             ChangeState(BattleState.DeterminingOrder);
 
             // プレイヤーの行動選択
-            foreach (var player in _playerParty.Where(p => p.IsAlive))
+            foreach (var player in playerParty.Where(p => p.IsAlive))
             {
                 ChangeState(BattleState.WaitingForPlayerAction);
                 yield return StartCoroutine(WaitForPlayerAction(player));
@@ -134,17 +133,17 @@ namespace anogame.framework
 
             // 敵の行動決定
             ChangeState(BattleState.EnemyActionDecision);
-            foreach (var enemy in _enemyParty.Where(e => e.IsAlive))
+            foreach (var enemy in enemyParty.Where(e => e.IsAlive))
             {
                 var action = DecideEnemyAction(enemy);
                 if (action != null)
                 {
-                    _actionQueue.AddAction(action);
+                    actionQueue.AddAction(action);
                 }
             }
 
             // 行動順序決定
-            _actionQueue.DetermineOrder();
+            actionQueue.SortActions();
             yield return new WaitForSeconds(0.5f);
         }
 
@@ -158,13 +157,13 @@ namespace anogame.framework
             BattleAction selectedAction = null;
             
             // UIからの入力待ち（仮実装）
-            if (_battleUI != null)
+            if (battleUI != null)
             {
-                _battleUI.ShowActionSelection(player, GetValidTargets(player));
+                battleUI.ShowActionSelection(player, GetValidTargets(player));
                 
                 // 入力完了まで待機
-                yield return new WaitUntil(() => _battleUI.HasSelectedAction());
-                selectedAction = _battleUI.GetSelectedAction();
+                yield return new WaitUntil(() => battleUI.HasSelectedAction());
+                selectedAction = battleUI.GetSelectedAction();
             }
             else
             {
@@ -174,7 +173,7 @@ namespace anogame.framework
 
             if (selectedAction != null)
             {
-                _actionQueue.AddAction(selectedAction);
+                actionQueue.AddAction(selectedAction);
             }
         }
 
@@ -185,11 +184,11 @@ namespace anogame.framework
         {
             if (enemy.AI != null)
             {
-                return enemy.AI.DecideAction(enemy, _enemyParty, _playerParty);
+                return enemy.AI.DecideAction(enemy, enemyParty, playerParty);
             }
             
             // 基本AI: ランダムにプレイヤーを攻撃
-            var aliveEnemies = _playerParty.Where(p => p.IsAlive).ToList();
+            var aliveEnemies = playerParty.Where(p => p.IsAlive).ToList();
             if (aliveEnemies.Count > 0)
             {
                 var target = aliveEnemies[UnityEngine.Random.Range(0, aliveEnemies.Count)];
@@ -206,9 +205,9 @@ namespace anogame.framework
         {
             ChangeState(BattleState.ExecutingAction);
 
-            while (_actionQueue.HasNextAction())
+            while (actionQueue.HasNextAction())
             {
-                var action = _actionQueue.GetNextAction();
+                var action = actionQueue.GetNextAction();
                 
                 if (action?.Actor != null && action.Actor.IsAlive)
                 {
@@ -254,7 +253,7 @@ namespace anogame.framework
                 if (!participant.IsAlive && participant.HasActedThisTurn)
                 {
                     OnParticipantDefeated?.Invoke(participant);
-                    _actionQueue.RemoveActionsBy(participant);
+                    actionQueue.RemoveActionsBy(participant);
                 }
             }
         }
@@ -264,8 +263,8 @@ namespace anogame.framework
         /// </summary>
         private BattleResult CheckBattleResult()
         {
-            bool playersAlive = _playerParty.Any(p => p.IsAlive);
-            bool enemiesAlive = _enemyParty.Any(e => e.IsAlive);
+            bool playersAlive = playerParty.Any(p => p.IsAlive);
+            bool enemiesAlive = enemyParty.Any(e => e.IsAlive);
 
             if (!playersAlive && !enemiesAlive)
                 return BattleResult.Draw;
@@ -306,8 +305,8 @@ namespace anogame.framework
         private List<BattleParticipant> GetAllParticipants()
         {
             var all = new List<BattleParticipant>();
-            all.AddRange(_playerParty);
-            all.AddRange(_enemyParty);
+            all.AddRange(playerParty);
+            all.AddRange(enemyParty);
             return all;
         }
 
@@ -318,8 +317,8 @@ namespace anogame.framework
         {
             // 基本的には敵を対象とする
             return actor.Type == ParticipantType.Player ? 
-                _enemyParty.Where(e => e.IsAlive).ToList() :
-                _playerParty.Where(p => p.IsAlive).ToList();
+                enemyParty.Where(e => e.IsAlive).ToList() :
+                playerParty.Where(p => p.IsAlive).ToList();
         }
 
         /// <summary>
@@ -327,7 +326,7 @@ namespace anogame.framework
         /// </summary>
         private BattleAction CreateDefaultPlayerAction(BattleParticipant player)
         {
-            var enemies = _enemyParty.Where(e => e.IsAlive).ToList();
+            var enemies = enemyParty.Where(e => e.IsAlive).ToList();
             if (enemies.Count > 0)
             {
                 var target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
@@ -354,8 +353,11 @@ namespace anogame.framework
     /// </summary>
     public interface IBattleUI
     {
+        void InitializeParticipants(List<BattleParticipant> players, List<BattleParticipant> enemies);
         void ShowActionSelection(BattleParticipant participant, List<BattleParticipant> validTargets);
         bool HasSelectedAction();
         BattleAction GetSelectedAction();
+        void AddLog(string message);
+        void UpdateTurnInfo(int turnNumber);
     }
 } 

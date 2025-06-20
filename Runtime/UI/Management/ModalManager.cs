@@ -10,16 +10,16 @@ namespace anogame.framework.UI
     /// </summary>
     public class ModalManager : MonoSingleton<ModalManager>
     {
-        private readonly Dictionary<string, IModal> _registeredModals = new Dictionary<string, IModal>();
-        private readonly Stack<IModal> _modalStack = new Stack<IModal>();
+        private readonly Dictionary<string, IModal> registeredModals = new Dictionary<string, IModal>();
+        private readonly Stack<IModal> modalStack = new Stack<IModal>();
         
-        [SerializeField] private Canvas _modalCanvas;
-        [SerializeField] private int _baseSortOrder = 1000;
+        [SerializeField] private Canvas modalCanvas;
+        [SerializeField] private int baseSortOrder = 1000;
         
         /// <summary>
         /// 現在のトップモーダル
         /// </summary>
-        public IModal TopModal => _modalStack.Count > 0 ? _modalStack.Peek() : null;
+        public IModal TopModal => modalStack.Count > 0 ? modalStack.Peek() : null;
         
         /// <summary>
         /// モーダル開閉イベント（開いたモーダル, true=開く/false=閉じる）
@@ -31,7 +31,7 @@ namespace anogame.framework.UI
             base.OnInitialize();
             
             // モーダル用のCanvasを作成
-            if (_modalCanvas == null)
+            if (modalCanvas == null)
             {
                 CreateModalCanvas();
             }
@@ -49,21 +49,21 @@ namespace anogame.framework.UI
                 return;
             }
             
-            if (_registeredModals.ContainsKey(modal.ModalId))
+            if (registeredModals.ContainsKey(modal.ModalId))
             {
                 Debug.LogWarning($"[ModalManager] Modal '{modal.ModalId}' は既に登録されています");
                 return;
             }
             
-            _registeredModals[modal.ModalId] = modal;
+            registeredModals[modal.ModalId] = modal;
             
             // モーダル閉じる要求イベントを購読
             modal.OnCloseRequested += OnModalCloseRequested;
             
             // モーダルをCanvasの子にする
-            if (_modalCanvas != null && modal.GameObject != null)
+            if (modalCanvas != null && modal.GameObject != null)
             {
-                modal.GameObject.transform.SetParent(_modalCanvas.transform, false);
+                modal.GameObject.transform.SetParent(modalCanvas.transform, false);
             }
             
             Debug.Log($"[ModalManager] Modal '{modal.ModalId}' を登録しました");
@@ -75,18 +75,18 @@ namespace anogame.framework.UI
         /// <param name="modalId">解除するモーダルID</param>
         public void UnregisterModal(string modalId)
         {
-            if (_registeredModals.TryGetValue(modalId, out var modal))
+            if (registeredModals.TryGetValue(modalId, out var modal))
             {
                 modal.OnCloseRequested -= OnModalCloseRequested;
-                _registeredModals.Remove(modalId);
+                registeredModals.Remove(modalId);
                 
                 // スタックからも削除
-                if (_modalStack.Contains(modal))
+                if (modalStack.Contains(modal))
                 {
                     var tempStack = new Stack<IModal>();
-                    while (_modalStack.Count > 0)
+                    while (modalStack.Count > 0)
                     {
-                        var m = _modalStack.Pop();
+                        var m = modalStack.Pop();
                         if (m != modal)
                         {
                             tempStack.Push(m);
@@ -94,7 +94,7 @@ namespace anogame.framework.UI
                     }
                     while (tempStack.Count > 0)
                     {
-                        _modalStack.Push(tempStack.Pop());
+                        modalStack.Push(tempStack.Pop());
                     }
                 }
                 
@@ -112,23 +112,23 @@ namespace anogame.framework.UI
             if (modal == null) return;
             
             // 既に開いている場合は何もしない
-            if (_modalStack.Contains(modal))
+            if (modalStack.Contains(modal))
             {
                 Debug.LogWarning($"[ModalManager] Modal '{modalId}' は既に開いています");
                 return;
             }
             
             // ソート順序を設定
-            modal.SortOrder = _baseSortOrder + _modalStack.Count;
+            modal.SortOrder = baseSortOrder + modalStack.Count;
             
             // スタックに追加
-            _modalStack.Push(modal);
+            modalStack.Push(modal);
             
             // モーダルを開く
             modal.Open();
             
             OnModalStateChanged?.Invoke(modal, true);
-            Debug.Log($"[ModalManager] Modal '{modalId}' を開きました（深度: {_modalStack.Count}）");
+            Debug.Log($"[ModalManager] Modal '{modalId}' を開きました（深度: {modalStack.Count}）");
         }
         
         /// <summary>
@@ -137,13 +137,13 @@ namespace anogame.framework.UI
         /// <returns>閉じることができたかどうか</returns>
         public bool CloseTopModal()
         {
-            if (_modalStack.Count == 0)
+            if (modalStack.Count == 0)
             {
                 Debug.LogWarning("[ModalManager] 閉じるモーダルがありません");
                 return false;
             }
             
-            var topModal = _modalStack.Peek();
+            var topModal = modalStack.Peek();
             return CloseModal(topModal.ModalId);
         }
         
@@ -158,7 +158,7 @@ namespace anogame.framework.UI
             if (modal == null) return false;
             
             // スタックに含まれていない場合は何もしない
-            if (!_modalStack.Contains(modal))
+            if (!modalStack.Contains(modal))
             {
                 Debug.LogWarning($"[ModalManager] Modal '{modalId}' は開いていません");
                 return false;
@@ -175,9 +175,9 @@ namespace anogame.framework.UI
             var tempStack = new Stack<IModal>();
             var targetFound = false;
             
-            while (_modalStack.Count > 0)
+            while (modalStack.Count > 0)
             {
-                var m = _modalStack.Pop();
+                var m = modalStack.Pop();
                 if (m == modal)
                 {
                     targetFound = true;
@@ -213,9 +213,9 @@ namespace anogame.framework.UI
         /// </summary>
         public void CloseAllModals()
         {
-            while (_modalStack.Count > 0)
+            while (modalStack.Count > 0)
             {
-                var modal = _modalStack.Pop();
+                var modal = modalStack.Pop();
                 modal.Close();
                 OnModalStateChanged?.Invoke(modal, false);
             }
@@ -241,7 +241,7 @@ namespace anogame.framework.UI
         /// <returns>モーダルインスタンス</returns>
         private IModal GetModal(string modalId)
         {
-            if (!_registeredModals.TryGetValue(modalId, out var modal))
+            if (!registeredModals.TryGetValue(modalId, out var modal))
             {
                 Debug.LogError($"[ModalManager] Modal '{modalId}' が見つかりません");
                 return null;
@@ -267,9 +267,9 @@ namespace anogame.framework.UI
             canvasObj.transform.SetParent(transform);
             canvasObj.layer = LayerMask.NameToLayer("UI");
             
-            _modalCanvas = canvasObj.AddComponent<Canvas>();
-            _modalCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _modalCanvas.sortingOrder = _baseSortOrder;
+            modalCanvas = canvasObj.AddComponent<Canvas>();
+            modalCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            modalCanvas.sortingOrder = baseSortOrder;
             
             var canvasScaler = canvasObj.AddComponent<UnityEngine.UI.CanvasScaler>();
             canvasScaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -286,13 +286,13 @@ namespace anogame.framework.UI
         [ContextMenu("Debug Modal Stack")]
         public void DebugModalStack()
         {
-            Debug.Log($"[ModalManager] Modal Stack: {string.Join(" -> ", _modalStack.Select(m => m.ModalId))}");
+            Debug.Log($"[ModalManager] Modal Stack: {string.Join(" -> ", modalStack.Select(m => m.ModalId))}");
         }
         
         /// <summary>
         /// 現在開いているモーダル数を取得
         /// </summary>
-        public int OpenModalCount => _modalStack.Count;
+        public int OpenModalCount => modalStack.Count;
         
         /// <summary>
         /// 全てのモーダルの一覧を取得
@@ -300,7 +300,7 @@ namespace anogame.framework.UI
         /// <returns>登録されているモーダルの一覧</returns>
         public IReadOnlyList<IModal> GetAllModals()
         {
-            return _registeredModals.Values.ToList();
+            return registeredModals.Values.ToList();
         }
     }
 } 

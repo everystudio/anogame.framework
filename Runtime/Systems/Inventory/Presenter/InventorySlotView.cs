@@ -59,7 +59,7 @@ namespace anogame.framework
                         
                         if (consumableItem.Use(dummyTarget))
                         {
-                            model.Remove(currentItem.Item, 1);
+                            model.RemoveItem(currentItem.Item, 1);
                             presenter.Refresh();
                             Debug.Log($"消費アイテム '{currentItem.Item.DisplayName}' を使用しました");
                         }
@@ -71,7 +71,7 @@ namespace anogame.framework
                     else
                     {
                         // 従来の消費アイテム処理
-                        model.Remove(currentItem.Item, 1);
+                        model.RemoveItem(currentItem.Item, 1);
                         presenter.Refresh();
                         Debug.Log($"消費アイテム '{currentItem.Item.DisplayName}' を使用しました");
                     }

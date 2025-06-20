@@ -8,78 +8,79 @@ namespace anogame.framework
     /// </summary>
     public class ActionQueue
     {
-        private List<BattleAction> _actions = new();
-        private int _currentIndex = 0;
+        private List<BattleAction> actions = new();
+        private int currentIndex = 0;
 
         /// <summary>
-        /// 行動を追加
+        /// アクションをキューに追加
         /// </summary>
         public void AddAction(BattleAction action)
         {
-            _actions.Add(action);
+            if (action == null) return;
+            
+            actions.Add(action);
         }
 
         /// <summary>
-        /// 行動順序を決定（速度順でソート）
+        /// アクションをソートして実行順序を決定
         /// </summary>
-        public void DetermineOrder()
+        public void SortActions()
         {
-            // 速度が高い順 → 同じ速度の場合はランダム
-            _actions = _actions
-                .OrderByDescending(a => a.Priority)
-                .ThenBy(a => UnityEngine.Random.value)
+            // 速度順（降順）でソート
+            actions = actions
+                .OrderByDescending(action => action.Actor.CharacterStatus.TotalSpeed)
                 .ToList();
             
-            _currentIndex = 0;
+            currentIndex = 0;
         }
 
         /// <summary>
-        /// 次の行動を取得
+        /// 次のアクションを取得
         /// </summary>
         public BattleAction GetNextAction()
         {
-            if (_currentIndex >= _actions.Count)
+            if (currentIndex >= actions.Count)
                 return null;
 
-            return _actions[_currentIndex++];
+            return actions[currentIndex++];
         }
 
         /// <summary>
-        /// まだ実行されていない行動があるか
+        /// まだ実行されていないアクションがあるか
         /// </summary>
         public bool HasNextAction()
         {
-            return _currentIndex < _actions.Count;
+            return currentIndex < actions.Count;
         }
 
         /// <summary>
-        /// 現在のターンの行動をすべて取得（デバッグ用）
+        /// 全てのアクションを取得（読み取り専用）
         /// </summary>
         public IReadOnlyList<BattleAction> GetAllActions()
         {
-            return _actions.AsReadOnly();
+            return actions.AsReadOnly();
         }
 
         /// <summary>
-        /// キューをクリア（新しいターン開始時）
+        /// キューをクリア
         /// </summary>
         public void Clear()
         {
-            _actions.Clear();
-            _currentIndex = 0;
+            actions.Clear();
+            currentIndex = 0;
         }
 
         /// <summary>
-        /// 指定した参加者の行動を削除（戦闘不能時など）
+        /// 指定した参加者のアクションを削除
         /// </summary>
         public void RemoveActionsBy(BattleParticipant participant)
         {
-            _actions.RemoveAll(action => action.Actor == participant);
+            actions.RemoveAll(action => action.Actor == participant);
             
-            // インデックスの調整
-            if (_currentIndex > _actions.Count)
+            // インデックスを調整
+            if (currentIndex > actions.Count)
             {
-                _currentIndex = _actions.Count;
+                currentIndex = actions.Count;
             }
         }
     }

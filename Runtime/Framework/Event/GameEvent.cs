@@ -6,35 +6,35 @@ namespace anogame.framework
 {
     public static class GameEvent<T>
     {
-        private static readonly List<Action<T>> _listeners = new();
+        private static readonly List<Action<T>> listeners = new();
 
         public static void Subscribe(Action<T> listener)
         {
-            if (!_listeners.Contains(listener))
+            if (!listeners.Contains(listener))
             {
-                _listeners.Add(listener);
+                listeners.Add(listener);
             }
         }
 
         public static void Unsubscribe(Action<T> listener)
         {
-            if (_listeners.Contains(listener))
+            if (listeners.Contains(listener))
             {
-                _listeners.Remove(listener);
+                listeners.Remove(listener);
             }
         }
 
-        public static void Publish(T value)
+        public static void Publish(T eventData)
         {
-            foreach (var listener in _listeners)
+            foreach (var listener in listeners)
             {
-                listener?.Invoke(value);
+                listener?.Invoke(eventData);
             }
         }
 
         public static void Clear()
         {
-            _listeners.Clear();
+            listeners.Clear();
         }
     }
 }
