@@ -36,7 +36,7 @@ namespace anogame.framework
 
         private void Start()
         {
-            _battleUI = FindObjectOfType<BattleUI>();
+            _battleUI = FindFirstObjectByType<BattleUI>();
         }
 
         /// <summary>

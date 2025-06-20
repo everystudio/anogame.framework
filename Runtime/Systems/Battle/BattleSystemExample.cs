@@ -21,8 +21,8 @@ namespace anogame.framework
 
         private void Start()
         {
-            _battleManager = FindObjectOfType<BattleManager>();
-            _battleUI = FindObjectOfType<BattleUI>();
+            _battleManager = FindFirstObjectByType<BattleManager>();
+            _battleUI = FindFirstObjectByType<BattleUI>();
 
             if (_battleManager == null)
             {
@@ -145,7 +145,7 @@ namespace anogame.framework
         private void OnBattleStateChanged(BattleState newState)
         {
             Debug.Log($"戦闘状態変更: {newState}");
-            
+
             if (_battleUI != null)
             {
                 _battleUI.AddLog($"状態: {GetBattleStateText(newState)}");
@@ -155,14 +155,14 @@ namespace anogame.framework
         private void OnActionExecuted(BattleAction action)
         {
             string message = $"{action.Actor.Name} が {GetActionTypeText(action.ActionType)}";
-            
+
             if (action.Target != null)
             {
                 message += $" → {action.Target.Name}";
             }
-            
+
             Debug.Log(message);
-            
+
             if (_battleUI != null)
             {
                 _battleUI.AddLog(message);
@@ -173,7 +173,7 @@ namespace anogame.framework
         {
             string message = $"{participant.Name} が倒れた！";
             Debug.Log(message);
-            
+
             if (_battleUI != null)
             {
                 _battleUI.AddLog(message);
@@ -184,7 +184,7 @@ namespace anogame.framework
         {
             string message = $"戦闘終了: {GetBattleResultText(result)}";
             Debug.Log(message);
-            
+
             if (_battleUI != null)
             {
                 _battleUI.AddLog(message);
@@ -194,7 +194,7 @@ namespace anogame.framework
         private void OnTurnStarted(int turnNumber)
         {
             Debug.Log($"ターン {turnNumber} 開始");
-            
+
             if (_battleUI != null)
             {
                 _battleUI.UpdateTurnInfo(turnNumber);
@@ -267,11 +267,11 @@ namespace anogame.framework
         {
             // 生きている敵（プレイヤー）をランダムに攻撃
             var aliveEnemies = enemies.FindAll(e => e.IsAlive);
-            
+
             if (aliveEnemies.Count > 0)
             {
                 var target = aliveEnemies[Random.Range(0, aliveEnemies.Count)];
-                
+
                 // 70%の確率で攻撃、30%の確率で防御
                 if (Random.value > 0.3f)
                 {
@@ -286,4 +286,4 @@ namespace anogame.framework
             return new BattleAction(BattleActionType.Guard, self);
         }
     }
-} 
+}

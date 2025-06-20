@@ -30,6 +30,33 @@ namespace anogame.framework
             }
         }
 
+        /// <summary>
+        /// シングルトンの初期化処理（継承先で実装）
+        /// </summary>
+        protected virtual void OnInitialize()
+        {
+            // 基底クラスでの初期化処理
+        }
+        
+        /// <summary>
+        /// Unity標準のAwake。OnInitializeを呼び出す
+        /// </summary>
+        private void Awake()
+        {
+            // インスタンスの設定確認
+            if (_instance == null)
+            {
+                _instance = this as T;
+                DontDestroyOnLoad(gameObject);
+                OnInitialize();
+            }
+            else if (_instance != this)
+            {
+                // 既に他のインスタンスが存在する場合は削除
+                Destroy(gameObject);
+            }
+        }
+        
         protected virtual void OnApplicationQuit() => _shuttingDown = true;
         protected virtual void OnDestroy()
         {
