@@ -9,9 +9,14 @@ namespace anogame.framework.UI
     public interface IPage : IUIView
     {
         /// <summary>
-        /// ページID
+        /// ページのID（種類を表す）
         /// </summary>
         string PageId { get; }
+        
+        /// <summary>
+        /// ページのインスタンスID（個別のインスタンスを識別）
+        /// </summary>
+        string InstanceId { get; }
         
         /// <summary>
         /// ページに入る

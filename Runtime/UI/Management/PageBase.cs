@@ -10,15 +10,40 @@ namespace anogame.framework.UI
     {
         [SerializeField] private string pageId;
         
+        private string instanceId;
+        
         public string PageId => pageId;
+        public string InstanceId => instanceId;
         
         /// <summary>
         /// PageIDを設定する（主にテスト用）
         /// </summary>
         /// <param name="id">設定するページID</param>
-        protected void SetPageId(string id)
+        public void SetPageId(string id)
         {
             pageId = id;
+            
+            // GameObjectの名前も更新
+            UpdateGameObjectName();
+            
+            Debug.Log($"[PageBase] PageId を '{id}' に設定しました");
+        }
+        
+        /// <summary>
+        /// 新しいインスタンスIDを生成する
+        /// </summary>
+        public void GenerateNewInstanceId()
+        {
+            instanceId = System.Guid.NewGuid().ToString();
+        }
+        
+        /// <summary>
+        /// インスタンスIDを手動設定する
+        /// </summary>
+        /// <param name="id">設定するインスタンスID</param>
+        public void SetInstanceId(string id)
+        {
+            instanceId = id;
         }
         
         public event Action<IPage> OnPageTransition;
@@ -84,6 +109,23 @@ namespace anogame.framework.UI
             OnPageTransition?.Invoke(targetPage);
         }
         
+        /// <summary>
+        /// GameObjectの名前を更新
+        /// </summary>
+        private void UpdateGameObjectName()
+        {
+            if (gameObject != null && !string.IsNullOrEmpty(pageId))
+            {
+                // インスタンスIDの短縮版（最初の8文字）
+                var shortInstanceId = instanceId?.Length > 8 ? instanceId.Substring(0, 8) : instanceId ?? "Unknown";
+                
+                // 新しい名前を設定
+                gameObject.name = $"Page_{pageId}_{shortInstanceId}";
+                
+                Debug.Log($"[PageBase] GameObjectの名前を '{gameObject.name}' に更新しました");
+            }
+        }
+        
         protected override void OnInitialize()
         {
             base.OnInitialize();
@@ -93,6 +135,15 @@ namespace anogame.framework.UI
             {
                 pageId = gameObject.name;
             }
+            
+            // InstanceIdを自動生成
+            if (string.IsNullOrEmpty(instanceId))
+            {
+                GenerateNewInstanceId();
+            }
+            
+            // GameObjectの名前を更新
+            UpdateGameObjectName();
         }
     }
 } 

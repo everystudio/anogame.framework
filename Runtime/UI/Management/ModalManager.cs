@@ -117,32 +117,74 @@ namespace anogame.framework.UI
                 Debug.LogError($"[ModalManager] Modal template '{modalId}' が見つかりません");
                 return null;
             }
-
+            
             // 新しいインスタンスを作成
             var modalInstance = CreateModalInstance(template);
             if (modalInstance == null) return null;
-
+            
             // セットアップアクションを実行
             setupAction?.Invoke(modalInstance);
-
+            
             // アクティブなモーダルとして管理
             activeModals[modalInstance.InstanceId] = modalInstance;
-
+            
             // 閉じる要求イベントを購読
             modalInstance.OnCloseRequested += OnModalCloseRequested;
-
+            
             // ソート順序を設定
             modalInstance.SortOrder = baseSortOrder + modalStack.Count;
-
+            
             // スタックに追加
             modalStack.Push(modalInstance);
-
+            
             // モーダルを開く
             modalInstance.Open();
-
+            
             OnModalStateChanged?.Invoke(modalInstance, true);
             Debug.Log($"[ModalManager] Modal '{modalId}' インスタンス '{modalInstance.InstanceId}' を開きました（深度: {modalStack.Count}）");
+            
+            return modalInstance;
+        }
 
+        /// <summary>
+        /// Prefabから直接モーダルを開く
+        /// </summary>
+        /// <param name="modalPrefab">モーダルのプレハブ</param>
+        /// <param name="setupAction">モーダル初期化アクション</param>
+        /// <returns>作成されたモーダルインスタンス</returns>
+        public IModal OpenModalFromPrefab(GameObject modalPrefab, Action<IModal> setupAction = null)
+        {
+            if (modalPrefab == null)
+            {
+                Debug.LogError("[ModalManager] Prefabがnullです");
+                return null;
+            }
+            
+            // 新しいインスタンスを作成
+            var modalInstance = CreateModalInstance(modalPrefab);
+            if (modalInstance == null) return null;
+            
+            // セットアップアクションを実行
+            setupAction?.Invoke(modalInstance);
+            
+            // アクティブなモーダルとして管理
+            activeModals[modalInstance.InstanceId] = modalInstance;
+            
+            // 閉じる要求イベントを購読
+            modalInstance.OnCloseRequested += OnModalCloseRequested;
+            
+            // ソート順序を設定
+            modalInstance.SortOrder = baseSortOrder + modalStack.Count;
+            
+            // スタックに追加
+            modalStack.Push(modalInstance);
+            
+            // モーダルを開く
+            modalInstance.Open();
+            
+            OnModalStateChanged?.Invoke(modalInstance, true);
+            Debug.Log($"[ModalManager] Prefabから Modal '{modalInstance.ModalId}' インスタンス '{modalInstance.InstanceId}' を開きました（深度: {modalStack.Count}）");
+            
             return modalInstance;
         }
 
@@ -161,6 +203,39 @@ namespace anogame.framework.UI
 
             // プレハブをインスタンス化
             var instanceObj = Instantiate(template.GameObject, modalCanvas.transform);
+            var modalInstance = instanceObj.GetComponent<IModal>();
+
+            if (modalInstance == null)
+            {
+                Debug.LogError($"[ModalManager] インスタンス化されたオブジェクトにIModalコンポーネントがありません");
+                Destroy(instanceObj);
+                return null;
+            }
+
+            // 新しいインスタンスIDを生成
+            if (modalInstance is ModalBase modalBase)
+            {
+                modalBase.GenerateNewInstanceId();
+            }
+
+            return modalInstance;
+        }
+
+        /// <summary>
+        /// モーダルインスタンスを作成（GameObject版）
+        /// </summary>
+        /// <param name="modalPrefab">モーダルのPrefab</param>
+        /// <returns>作成されたインスタンス</returns>
+        private IModal CreateModalInstance(GameObject modalPrefab)
+        {
+            if (modalPrefab == null)
+            {
+                Debug.LogError("[ModalManager] Modal prefabがnullです");
+                return null;
+            }
+
+            // プレハブをインスタンス化
+            var instanceObj = Instantiate(modalPrefab, modalCanvas.transform);
             var modalInstance = instanceObj.GetComponent<IModal>();
 
             if (modalInstance == null)

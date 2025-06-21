@@ -12,6 +12,10 @@ namespace anogame.framework.UI
         [SerializeField] private bool enableBackButton = true;
         [SerializeField] private bool enableEscapeKey = true;
         
+        [Header("Canvas設定")]
+        [SerializeField] private Canvas pageCanvas;
+        [SerializeField] private bool autoCreatePageCanvas = true;
+        
         /// <summary>
         /// PageManagerの参照
         /// </summary>
@@ -44,6 +48,9 @@ namespace anogame.framework.UI
         private void InitializeUI()
         {
             Debug.Log("[UIManager] UIシステムを初期化中...");
+            
+            // Page用Canvasの設定
+            SetupPageCanvas();
             
             // 各マネージャーの初期化を確認
             if (PageManager != null)
@@ -202,7 +209,7 @@ namespace anogame.framework.UI
             switch (uiView)
             {
                 case IPage page:
-                    PageManager?.RegisterPage(page);
+                    PageManager?.RegisterPageTemplate(page.PageId, page.GameObject);
                     break;
                 case IModal modal:
                     ModalManager?.RegisterModal(modal);
@@ -223,7 +230,7 @@ namespace anogame.framework.UI
             switch (uiView)
             {
                 case IPage page:
-                    PageManager?.UnregisterPage(page.PageId);
+                    PageManager?.UnregisterPageTemplate(page.PageId);
                     break;
                 case IModal modal:
                     ModalManager?.UnregisterModal(modal.ModalId);
@@ -232,6 +239,53 @@ namespace anogame.framework.UI
                     Debug.LogWarning($"[UIManager] Sheet '{sheet.SheetId}' の登録解除には手動でSheetManager.UnregisterSheet()を呼び出してください。");
                     break;
             }
+        }
+        
+        /// <summary>
+        /// Page用Canvasの設定
+        /// </summary>
+        private void SetupPageCanvas()
+        {
+            if (pageCanvas == null && autoCreatePageCanvas)
+            {
+                CreatePageCanvas();
+            }
+            
+            if (pageCanvas != null)
+            {
+                Debug.Log($"[UIManager] Page Canvas '{pageCanvas.name}' を使用します");
+            }
+        }
+        
+        /// <summary>
+        /// Page用Canvasを作成
+        /// </summary>
+        private void CreatePageCanvas()
+        {
+            var canvasObj = new GameObject("PageCanvas");
+            canvasObj.transform.SetParent(transform, false);
+            
+            pageCanvas = canvasObj.AddComponent<Canvas>();
+            pageCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            pageCanvas.sortingOrder = 0;
+            
+            var canvasScaler = canvasObj.AddComponent<UnityEngine.UI.CanvasScaler>();
+            canvasScaler.uiScaleMode = UnityEngine.UI.CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            canvasScaler.referenceResolution = new Vector2(1920, 1080);
+            canvasScaler.screenMatchMode = UnityEngine.UI.CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            canvasScaler.matchWidthOrHeight = 0.5f;
+            
+            canvasObj.AddComponent<UnityEngine.UI.GraphicRaycaster>();
+            
+            Debug.Log("[UIManager] Page用Canvasを作成しました");
+        }
+        
+        /// <summary>
+        /// Page用Canvasを取得
+        /// </summary>
+        public Canvas GetPageCanvas()
+        {
+            return pageCanvas;
         }
         
         /// <summary>

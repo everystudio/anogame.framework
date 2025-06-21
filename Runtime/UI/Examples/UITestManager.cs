@@ -13,24 +13,31 @@ namespace anogame.framework.UI
         [SerializeField] private GameObject examplePagePrefab;
         [SerializeField] private GameObject exampleModalPrefab;
         [SerializeField] private GameObject exampleSheetPrefab;
-        
+
         [Header("テスト用ボタン")]
         [SerializeField] private Button showPageButton;
         [SerializeField] private Button showModalButton;
+        [SerializeField] private Button showPrefabPageButton;
+        [SerializeField] private Button showPrefabModalButton;
         [SerializeField] private Button debugUIButton;
-        
+
         [Header("設定")]
         [SerializeField] private Transform pageParent;
         [SerializeField] private Transform modalParent;
         [SerializeField] private string testPageId = "TestPage";
         [SerializeField] private string testModalId = "TestModal";
-        
+
+        // ページ間移動テスト用
+        [Header("ページ間移動テスト")]
+        [SerializeField] private Button testPageNavigationButton;
+        [SerializeField] private Button goBackButton;
+
         private void Start()
         {
             SetupTestButtons();
-            SetupTestUI();
+            SetupTestTemplates();
         }
-        
+
         /// <summary>
         /// テスト用ボタンのイベント設定
         /// </summary>
@@ -38,18 +45,31 @@ namespace anogame.framework.UI
         {
             if (showPageButton != null)
                 showPageButton.onClick.AddListener(ShowTestPage);
-                
+
             if (showModalButton != null)
                 showModalButton.onClick.AddListener(ShowTestModal);
-                
+
+            if (showPrefabPageButton != null)
+                showPrefabPageButton.onClick.AddListener(ShowPageFromPrefab);
+
+            if (showPrefabModalButton != null)
+                showPrefabModalButton.onClick.AddListener(ShowModalFromPrefab);
+
             if (debugUIButton != null)
                 debugUIButton.onClick.AddListener(DebugUI);
+
+            // ページ間移動テスト用ボタン
+            if (testPageNavigationButton != null)
+                testPageNavigationButton.onClick.AddListener(TestPageNavigation);
+
+            if (goBackButton != null)
+                goBackButton.onClick.AddListener(GoBackPage);
         }
-        
+
         /// <summary>
-        /// テスト用UIの準備
+        /// テスト用テンプレートの準備
         /// </summary>
-        private void SetupTestUI()
+        private void SetupTestTemplates()
         {
             // UIManagerが存在することを確認
             if (UIManager.Instance == null)
@@ -57,81 +77,50 @@ namespace anogame.framework.UI
                 Debug.LogError("UIManagerが見つかりません。UIManagerをシーンに配置してください。");
                 return;
             }
-            
-            // ページの作成と登録
+
+            // 複数のページテンプレートを登録
             if (examplePagePrefab != null)
             {
-                CreateAndRegisterPage();
+                PageManager.Instance.RegisterPageTemplate("HomePage", examplePagePrefab);
+                PageManager.Instance.RegisterPageTemplate("SettingsPage", examplePagePrefab);
+                PageManager.Instance.RegisterPageTemplate("ProfilePage", examplePagePrefab);
+                PageManager.Instance.RegisterPageTemplate("GamePage", examplePagePrefab);
+                PageManager.Instance.RegisterPageTemplate(testPageId, examplePagePrefab);
+                Debug.Log("[UITestManager] 複数のページテンプレートを登録しました");
             }
-            
-            // モーダルの作成と登録
+
+            // モーダルテンプレートの登録
             if (exampleModalPrefab != null)
             {
-                CreateAndRegisterModal();
+                // テンプレート用のインスタンスを作成（非アクティブ）
+                var templateObj = Instantiate(exampleModalPrefab);
+                templateObj.SetActive(false);
+                var modal = templateObj.GetComponent<IModal>();
+                if (modal != null)
+                {
+                    ModalManager.Instance.RegisterModal(modal);
+                    Debug.Log($"[UITestManager] モーダルテンプレート '{testModalId}' を登録しました");
+                }
             }
-            
+
             Debug.Log("[UITestManager] テスト用UIの準備完了");
         }
-        
+
         /// <summary>
-        /// テスト用ページの作成と登録
-        /// </summary>
-        private void CreateAndRegisterPage()
-        {
-            Transform parent = pageParent != null ? pageParent : transform;
-            GameObject pageObj = Instantiate(examplePagePrefab, parent);
-            
-            ExamplePage page = pageObj.GetComponent<ExamplePage>();
-            if (page != null)
-            {
-                // PageIDを設定
-                page.SetPageId(testPageId);
-                
-                // PageManagerに登録
-                PageManager.Instance.RegisterPage(page);
-                
-                Debug.Log($"[UITestManager] ページ '{testPageId}' を登録しました");
-            }
-            else
-            {
-                Debug.LogError("ExamplePageコンポーネントが見つかりません");
-            }
-        }
-        
-        /// <summary>
-        /// テスト用モーダルの作成と登録
-        /// </summary>
-        private void CreateAndRegisterModal()
-        {
-            Transform parent = modalParent != null ? modalParent : transform;
-            GameObject modalObj = Instantiate(exampleModalPrefab, parent);
-            
-            ExampleModal modal = modalObj.GetComponent<ExampleModal>();
-            if (modal != null)
-            {
-                // ModalIDを設定
-                modal.SetModalId(testModalId);
-                
-                // ModalManagerに登録
-                ModalManager.Instance.RegisterModal(modal);
-                
-                Debug.Log($"[UITestManager] モーダル '{testModalId}' を登録しました");
-            }
-            else
-            {
-                Debug.LogError("ExampleModalコンポーネントが見つかりません");
-            }
-        }
-        
-        /// <summary>
-        /// テスト用ページを表示
+        /// テスト用ページを表示（テンプレート使用）
         /// </summary>
         [ContextMenu("Show Test Page")]
         public void ShowTestPage()
         {
             if (PageManager.Instance != null)
             {
-                PageManager.Instance.NavigateToPage(testPageId);
+                PageManager.Instance.NavigateToPage(testPageId, (page) =>
+                {
+                    if (page is ExamplePage examplePage)
+                    {
+                        examplePage.SetPageMessage($"テンプレートページ - 時刻: {System.DateTime.Now:HH:mm:ss}");
+                    }
+                });
                 Debug.Log($"[UITestManager] ページ '{testPageId}' を表示しました");
             }
             else
@@ -139,16 +128,46 @@ namespace anogame.framework.UI
                 Debug.LogError("PageManagerが見つかりません");
             }
         }
-        
+
         /// <summary>
-        /// テスト用モーダルを表示
+        /// Prefabから直接ページを表示
+        /// </summary>
+        [ContextMenu("Show Page From Prefab")]
+        public void ShowPageFromPrefab()
+        {
+            if (PageManager.Instance != null && examplePagePrefab != null)
+            {
+                Debug.LogError($"[UITestManager] Prefabからページを表示します: {examplePagePrefab.name}");
+                var page = PageManager.Instance.OpenPageFromPrefab(examplePagePrefab, (p) =>
+                {
+                    if (p is ExamplePage examplePage)
+                    {
+                        examplePage.SetPageMessage($"Prefabページ - ID: {p.InstanceId[..8]}");
+                    }
+                });
+                Debug.Log($"[UITestManager] Prefabからページを表示しました");
+            }
+            else
+            {
+                Debug.LogError("PageManagerまたはPrefabが見つかりません");
+            }
+        }
+
+        /// <summary>
+        /// テスト用モーダルを表示（テンプレート使用）
         /// </summary>
         [ContextMenu("Show Test Modal")]
         public void ShowTestModal()
         {
             if (ModalManager.Instance != null)
             {
-                var modal = ModalManager.Instance.OpenModal(testModalId);
+                var modal = ModalManager.Instance.OpenModal(testModalId, (m) =>
+                {
+                    if (m is ExampleModal exampleModal)
+                    {
+                        exampleModal.SetModalMessage($"テンプレートモーダル - 時刻: {System.DateTime.Now:HH:mm:ss}");
+                    }
+                });
                 Debug.Log($"[UITestManager] モーダル '{testModalId}' を表示しました");
             }
             else
@@ -156,7 +175,30 @@ namespace anogame.framework.UI
                 Debug.LogError("ModalManagerが見つかりません");
             }
         }
-        
+
+        /// <summary>
+        /// Prefabから直接モーダルを表示
+        /// </summary>
+        [ContextMenu("Show Modal From Prefab")]
+        public void ShowModalFromPrefab()
+        {
+            if (ModalManager.Instance != null && exampleModalPrefab != null)
+            {
+                var modal = ModalManager.Instance.OpenModalFromPrefab(exampleModalPrefab, (m) =>
+                {
+                    if (m is ExampleModal exampleModal)
+                    {
+                        exampleModal.SetModalMessage($"Prefabモーダル - ID: {m.InstanceId[..8]}");
+                    }
+                });
+                Debug.Log($"[UITestManager] Prefabからモーダルを表示しました");
+            }
+            else
+            {
+                Debug.LogError("ModalManagerまたはPrefabが見つかりません");
+            }
+        }
+
         /// <summary>
         /// パラメータ付きテストモーダルを表示
         /// </summary>
@@ -165,7 +207,8 @@ namespace anogame.framework.UI
         {
             if (ModalManager.Instance != null)
             {
-                var modal = ModalManager.Instance.OpenModal(testModalId, (m) => {
+                var modal = ModalManager.Instance.OpenModal(testModalId, (m) =>
+                {
                     // モーダルの初期化パラメータを設定
                     if (m is ExampleModal exampleModal)
                     {
@@ -179,7 +222,7 @@ namespace anogame.framework.UI
                 Debug.LogError("ModalManagerが見つかりません");
             }
         }
-        
+
         /// <summary>
         /// 複数の同じモーダルを開く
         /// </summary>
@@ -190,7 +233,8 @@ namespace anogame.framework.UI
             {
                 for (int i = 1; i <= 3; i++)
                 {
-                    var modal = ModalManager.Instance.OpenModal(testModalId, (m) => {
+                    var modal = ModalManager.Instance.OpenModal(testModalId, (m) =>
+                    {
                         if (m is ExampleModal exampleModal)
                         {
                             exampleModal.SetModalMessage($"モーダル #{i} - ID: {m.InstanceId[..8]}");
@@ -204,7 +248,33 @@ namespace anogame.framework.UI
                 Debug.LogError("ModalManagerが見つかりません");
             }
         }
-        
+
+        /// <summary>
+        /// 複数のPrefabモーダルを開く
+        /// </summary>
+        [ContextMenu("Show Multiple Prefab Modals")]
+        public void ShowMultiplePrefabModals()
+        {
+            if (ModalManager.Instance != null && exampleModalPrefab != null)
+            {
+                for (int i = 1; i <= 3; i++)
+                {
+                    var modal = ModalManager.Instance.OpenModalFromPrefab(exampleModalPrefab, (m) =>
+                    {
+                        if (m is ExampleModal exampleModal)
+                        {
+                            exampleModal.SetModalMessage($"Prefabモーダル #{i} - ID: {m.InstanceId[..8]}");
+                        }
+                    });
+                }
+                Debug.Log($"[UITestManager] 複数のPrefabモーダルを表示しました");
+            }
+            else
+            {
+                Debug.LogError("ModalManagerまたはPrefabが見つかりません");
+            }
+        }
+
         /// <summary>
         /// 指定タイプのモーダルをすべて閉じる
         /// </summary>
@@ -217,9 +287,9 @@ namespace anogame.framework.UI
                 Debug.Log($"[UITestManager] すべての '{testModalId}' モーダルを閉じました");
             }
         }
-        
+
         /// <summary>
-        /// UI状態のデバッグ情報を表示
+        /// UIの状態をデバッグ出力
         /// </summary>
         [ContextMenu("Debug UI State")]
         public void DebugUI()
@@ -233,18 +303,108 @@ namespace anogame.framework.UI
                 Debug.LogError("UIManagerが見つかりません");
             }
         }
-        
+
         /// <summary>
-        /// すべてのUIをリセット
+        /// ページ間移動のテスト
         /// </summary>
-        [ContextMenu("Reset All UI")]
-        public void ResetAllUI()
+        [ContextMenu("Test Page Navigation")]
+        public void TestPageNavigation()
         {
-            if (UIManager.Instance != null)
+            if (PageManager.Instance == null)
             {
-                UIManager.Instance.ResetAllUI();
-                Debug.Log("[UITestManager] すべてのUIをリセットしました");
+                Debug.LogError("PageManagerが見つかりません");
+                return;
+            }
+
+            // 現在のページ数を確認
+            var currentPageCount = PageManager.Instance.PageDepth;
+
+            if (currentPageCount == 0)
+            {
+                // 最初のページを開く
+                PageManager.Instance.NavigateToPage("HomePage", (page) =>
+                {
+                    if (page is ExamplePage examplePage)
+                    {
+                        examplePage.SetPageMessage("ホームページ");
+                        // 次のページへのボタンを有効化（ここでは設定で行う）
+                    }
+                });
+                Debug.Log("[UITestManager] ホームページを開きました");
+            }
+            else if (currentPageCount == 1)
+            {
+                // 2番目のページに移動
+                PageManager.Instance.PushPage("SettingsPage", (page) =>
+                {
+                    if (page is ExamplePage examplePage)
+                    {
+                        examplePage.SetPageMessage("設定ページ");
+                    }
+                });
+                Debug.Log("[UITestManager] 設定ページに移動しました");
+            }
+            else if (currentPageCount == 2)
+            {
+                // 3番目のページに移動
+                PageManager.Instance.PushPage("ProfilePage", (page) =>
+                {
+                    if (page is ExamplePage examplePage)
+                    {
+                        examplePage.SetPageMessage("プロフィールページ");
+                    }
+                });
+                Debug.Log("[UITestManager] プロフィールページに移動しました");
+            }
+            else
+            {
+                // 4番目のページに移動
+                PageManager.Instance.PushPage("GamePage", (page) =>
+                {
+                    if (page is ExamplePage examplePage)
+                    {
+                        examplePage.SetPageMessage("ゲームページ");
+                    }
+                });
+                Debug.Log("[UITestManager] ゲームページに移動しました");
+            }
+        }
+
+        /// <summary>
+        /// 前のページに戻る
+        /// </summary>
+        [ContextMenu("Go Back Page")]
+        public void GoBackPage()
+        {
+            if (PageManager.Instance != null)
+            {
+                var success = PageManager.Instance.PopPage();
+                if (success)
+                {
+                    Debug.Log("[UITestManager] 前のページに戻りました");
+                }
+                else
+                {
+                    Debug.Log("[UITestManager] 戻るページがありません");
+                }
+            }
+            else
+            {
+                Debug.LogError("PageManagerが見つかりません");
+            }
+        }
+
+        /// <summary>
+        /// ページ履歴のリセット
+        /// </summary>
+        [ContextMenu("Reset Page History")]
+        public void ResetPageHistory()
+        {
+            if (PageManager.Instance != null)
+            {
+                PageManager.Instance.ClearPageStack();
+                Debug.Log("[UITestManager] ページ履歴をリセットしました");
             }
         }
     }
-} 
+}
