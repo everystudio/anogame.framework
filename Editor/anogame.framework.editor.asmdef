@@ -1,0 +1,18 @@
+{
+    "name": "anogame.framework.editor",
+    "rootNamespace": "anogame.framework.Editor",
+    "references": [
+        "anogame.framework"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

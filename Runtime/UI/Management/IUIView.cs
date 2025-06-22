@@ -14,6 +14,11 @@ namespace anogame.framework.UI
         bool IsVisible { get; }
         
         /// <summary>
+        /// アニメーション中かどうか
+        /// </summary>
+        bool IsAnimating { get; }
+        
+        /// <summary>
         /// GameObjectの参照
         /// </summary>
         GameObject GameObject { get; }
